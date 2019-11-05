@@ -1,0 +1,55 @@
+body {
+  background: url('../images/space-bg.jpg') no-repeat center center / cover;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.container {
+  display: flex;
+  position: relative;
+  z-index: 100;
+}
+
+.tint {
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  height: 100vh;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.rules {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #fff;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: Arial, sans-serif;
+  height: 640px;
+  padding: 32px;
+  max-width: 350px;
+}
+
+.rules h3 {
+  color: #fff;
+  margin: 0;
+}
+
+.rules h4 {
+  color: #fff;
+  font-size: 14px;
+  margin: 16px 0;
+}
+
+.rules p,
+.rules ul li {
+  font-size: 13px;
+  line-height: 1.3rem;
+}
+
+.rules ul li {
+  padding-bottom: 4px;
+}
