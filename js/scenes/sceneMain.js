@@ -8,7 +8,7 @@ class SceneMain extends Phaser.Scene {
     const mediaManager = new MediaManager({ scene: this });
 
     // Life
-    this.playerLife = 100;
+    this.playerLife = 50;
     this.enemyLife = 120;
     this.totalEL = 120;
     model.playerWon = true;
@@ -143,7 +143,7 @@ class SceneMain extends Phaser.Scene {
   }
 
   makeInfo() {
-    this.text1 = this.add.text(0, 0, "Your Ship\n100",
+    this.text1 = this.add.text(0, 0, "Your Ship\n50",
       {
         fontSize: game.config.width / 30,
         align: "center",
