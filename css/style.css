@@ -7,7 +7,10 @@ body {
 }
 
 .container {
+  align-items: center;
   display: flex;
+  justify-content: center;
+  padding-top: 60px;
   position: relative;
   z-index: 100;
 }
