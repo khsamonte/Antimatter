@@ -442,15 +442,23 @@ class SceneMain extends Phaser.Scene {
   }
 
   shiftSouthEast() {
+    this.ship.setVelocityX(80);
+    this.ship.setVelocityY(80);
     this.ship.angle = 45;
   }
   shiftSouthWest() {
+    this.ship.setVelocityX(-80);
+    this.ship.setVelocityY(80);
     this.ship.angle = 135;
   }
   shiftNorthWest() {
+    this.ship.setVelocityX(-80);
+    this.ship.setVelocityY(-80);
     this.ship.angle = 225;
   }
   shiftNorthEast() {
+    this.ship.setVelocityX(80);
+    this.ship.setVelocityY(-80);
     this.ship.angle = 315;
   }
 
@@ -526,11 +534,11 @@ class SceneMain extends Phaser.Scene {
 
     if (cursors.left.isDown) {
       this.moveLeft();
-    } if (cursors.up.isDown) {
+    } else if (cursors.up.isDown) {
       this.moveUp();
-    } if (cursors.down.isDown) {
+    } else if (cursors.down.isDown) {
       this.moveDown();
-    } if (cursors.right.isDown) {
+    } else if (cursors.right.isDown) {
       this.moveRight();
     }
 
