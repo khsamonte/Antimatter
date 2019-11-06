@@ -34,7 +34,7 @@ class MediaManager {
 
   setBackgroundMusic(key) {
     if (model.musicOn) {
-      this.background = this.scene.sound.add(key, { volume: 0.8, loop: true });
+      this.background = this.scene.sound.add(key, { volume: 0.7, loop: true });
       this.background.play();
     }
   }

@@ -314,8 +314,11 @@ class SceneMain extends Phaser.Scene {
     // Seconds conditions
     this.seconds += 1;
 
-    if (this.seconds === 60) {
+    if (this.seconds % 20 === 0) {
       this.spawnStar();
+    }
+
+    if (this.seconds === 60) {
       this.seconds = 0;
       this.minutes += 1;
     }
@@ -342,7 +345,7 @@ class SceneMain extends Phaser.Scene {
     star.destroy();
     emitter.emit(G.PLAY_STAR_SOUND, "starSound");
     if (this.playerLife < 45) {
-      this.playerLife += 5;
+      this.playerLife += 2;
     } else {
       this.playerLife = this.totalPlayerHP;
     }
