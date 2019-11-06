@@ -15,7 +15,7 @@ class SceneMain extends Phaser.Scene {
     this.minutes = 0;
 
     // Initialise HP
-    this.totalPlayerHP = 50;
+    this.totalPlayerHP = 70;
     this.totalEL = 120;
     this.playerLife = this.totalPlayerHP;
     this.enemyLife = 120;
@@ -268,6 +268,7 @@ class SceneMain extends Phaser.Scene {
     const explosion = this.add.sprite(this.ship.x, this.ship.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
+    this.playerLife -= 2;
     this.downPlayer();
     bullet.destroy();
   }
@@ -285,7 +286,6 @@ class SceneMain extends Phaser.Scene {
   }
 
   downPlayer() {
-    this.playerLife -= 2;
     this.playerHPText.setText("Your Ship\n" + this.playerLife);
     if (this.playerLife < 1) {
       model.playerWon = false;
@@ -344,7 +344,7 @@ class SceneMain extends Phaser.Scene {
   healPlayer(ship, star) {
     star.destroy();
     emitter.emit(G.PLAY_STAR_SOUND, "starSound");
-    if (this.playerLife < 45) {
+    if (this.playerLife < 68) {
       this.playerLife += 2;
     } else {
       this.playerLife = this.totalPlayerHP;
@@ -371,6 +371,7 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "explode");
     rock.destroy();
     this.makeRocks();
+    this.playerLife -= 1;
     this.downPlayer();
   }
 
