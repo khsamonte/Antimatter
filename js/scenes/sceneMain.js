@@ -467,18 +467,18 @@ class SceneMain extends Phaser.Scene {
   }
 
   enemyShipChase() {
-    let speed = 50;
+    let mothershipSpeed = 50;
 
     if (this.enemyLife < this.totalEL / 2) {
-      speed = 75;
+      mothershipSpeed = 65;
     }
 
     if (this.enemyLife < this.totalEL / 4) {
-      speed = 99;
+      mothershipSpeed = 80;
     }
 
     // Enemy ship movement
-    let enemyAngle = this.physics.moveTo(this.eship, this.ship.x, this.ship.y, speed);
+    let enemyAngle = this.physics.moveTo(this.eship, this.ship.x, this.ship.y, mothershipSpeed);
     enemyAngle = this.toDegrees(enemyAngle);
     this.eship.angle = enemyAngle;
   }

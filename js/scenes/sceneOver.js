@@ -12,8 +12,12 @@ class SceneOver extends Phaser.Scene {
     this.alignGrid = new AlignGrid({ rows: 11, cols: 11, scene: this });
     // this.alignGrid.showNumbers();
 
-    this.winnerText = this.add.text(0, 0, "WINNER",
-      { fontSize: game.config.width / 10, color: "#3fe213" }
+    this.winnerText = this.add.text(0, 0, model.playerWon ? "YOU WIN" : "YOU LOSE",
+      {
+        fontSize: game.config.width / 10,
+        color: model.playerWon ? "#3fe213" : "#e50000",
+        fontFamily: "Varela Round"
+      }
     );
     this.winnerText.setOrigin(0.5, 0.5);
     this.alignGrid.placeAtIndex(38, this.winnerText);
@@ -31,9 +35,13 @@ class SceneOver extends Phaser.Scene {
     // Start Button
     const buttonStart = new FlatButton({
       scene: this,
-      key: "button1",
-      text: "Play Again!",
+      key: "purpleButton",
+      text: "PLAY AGAIN",
       event: "start_game",
+      textConfig: {
+        fontFamily: "Varela Round",
+        fontSize: 24
+      }
     });
     this.alignGrid.placeAtIndex(93, buttonStart);
 
