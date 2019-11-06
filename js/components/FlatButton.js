@@ -1,10 +1,18 @@
+/**
+* File: FlatButton.js
+* Author: Ken
+*
+* The button used in the Title and GameOver screens.
+*
+* Copyright (C) November 2019, Ken Samonte
+ */
+
 class FlatButton extends Phaser.GameObjects.Container {
   constructor(config) {
     if (!config.scene) {
       console.log("Missing scene!");
       return;
     }
-
     if (!config.key) {
       console.log("Missing key!");
       return;

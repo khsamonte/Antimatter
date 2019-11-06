@@ -1,3 +1,12 @@
+/**
+* File: main.js
+* Author: Ken
+*
+* The configuration of the entire game.
+*
+* Copyright (C) November 2019, Ken Samonte
+ */
+
 let game;
 let model;
 let emitter;
@@ -43,6 +52,7 @@ window.onload = function () {
     }
   }
 
+  // Global instances
   G = new Constants();
   model = new Model();
   model.isMobile = isMobile;

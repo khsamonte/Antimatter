@@ -7,17 +7,24 @@ class SceneMain extends Phaser.Scene {
     controller = new Controller();
     const mediaManager = new MediaManager({ scene: this });
 
-    // Life
-    this.playerLife = 50;
-    this.enemyLife = 120;
-    this.totalEL = 120;
+    // Game Condition
     model.playerWon = true;
+
+    // Initialise stopwatch components
+    this.seconds = 0;
+    this.minutes = 0;
+
+    // Initialise HP
+    this.totalPlayerHP = 50;
+    this.totalEL = 120;
+    this.playerLife = this.totalPlayerHP;
+    this.enemyLife = 120;
 
     // Centre of the screen
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
 
-    // Add background
+    // Add background image
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
@@ -35,10 +42,11 @@ class SceneMain extends Phaser.Scene {
 
     // Make background listen to events (to move the ship)
     this.background.setInteractive();
-    this.background.on("pointerdown", this.backgroundClicked, this);
+    // this.background.on("pointerdown", this.backgroundClicked, this);
+
 
     // Fire bullet on pressing "W"
-    this.fireKey = this.input.keyboard.addKey("W");
+    this.fireKey = this.input.keyboard.addKey("C");
     this.fireKey.on("down", this.fireBullet, this);
 
     /**
@@ -57,7 +65,9 @@ class SceneMain extends Phaser.Scene {
     this.bulletGroup = this.physics.add.group({});
     this.eBulletGroup = this.physics.add.group({});
     this.rockGroup = this.physics.add.group({});
+    this.starGroup = this.physics.add.group({});
     this.makeRocks();
+    this.spawnStar();
 
     // Explosion frames and animation
     const expFrames = this.anims.generateFrameNumbers("exp");
@@ -85,6 +95,39 @@ class SceneMain extends Phaser.Scene {
     // const sb = new SoundButtons({ scene: this });
   }
 
+  spawnStar() {
+    // Random coordinates
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    // Apply physics to the stars (-1, 0, 1)
+    let vx = Math.floor(Math.random() * 2) - 1;
+    let vy = Math.floor(Math.random() * 2) - 1;
+
+    // Avoid immobile spawning of asteroid
+    if (vx === 0 && vy === 0) {
+      vx = 1;
+      vy = 1;
+    }
+
+    // Somewhere between 10 and 150
+    const speed = Math.floor(Math.random() * 150 + 10);
+
+    // Add the sprite
+    const star = this.physics.add.sprite(xx, yy, "star");
+    Align.scaleToGameWidth(star, 0.06);
+    this.starGroup.add(star);
+
+    // Set the 
+    star.body.setVelocity(vx * speed, vy * speed);
+    star.body.bounce.setTo(1, 1);
+    star.body.angularVelocity = 1;
+    star.body.collideWorldBounds = true;
+
+    this.setStarColliders();
+  }
+
+  // Create the rock groups
   makeRocks() {
     if (this.rockGroup.getChildren().length === 0) {
       this.rockGroup = this.physics.add.group({
@@ -99,9 +142,9 @@ class SceneMain extends Phaser.Scene {
 
       // Randomise every group node's x and y in the whole background
       this.rockGroup.children.iterate(function (child) {
+        // Randomise spawn of asteroids anywhere in the field
         const xx = Math.floor(Math.random() * this.background.displayWidth);
         const yy = Math.floor(Math.random() * this.background.displayHeight);
-
         child.x = xx;
         child.y = yy;
         Align.scaleToGameWidth(child, 0.1);
@@ -110,6 +153,7 @@ class SceneMain extends Phaser.Scene {
         let vx = Math.floor(Math.random() * 2) - 1;
         let vy = Math.floor(Math.random() * 2) - 1;
 
+        // Avoid immobile spawning of asteroid
         if (vx === 0 && vy === 0) {
           vx = 1;
           vy = 1;
@@ -130,42 +174,65 @@ class SceneMain extends Phaser.Scene {
     this.physics.add.collider(this.eBulletGroup, this.ship, this.damagePlayer, null, this);
   }
 
-  setRockColliders() {
-    // Create colliders for rocks
-    this.physics.add.collider(this.rockGroup);
+  setStarColliders() {
+    this.physics.add.collider(this.starGroup);
+    this.physics.add.collider(this.starGroup, this.rockGroup);
 
-    // Rocks + bullets
-    this.physics.add.collider(this.bulletGroup, this.rockGroup, this.destroyRock, null, this);
-    this.physics.add.collider(this.eBulletGroup, this.rockGroup, this.destroyRock, null, this);
+    this.physics.add.collider(this.starGroup, this.ship, this.healPlayer, null, this);
+    this.physics.add.collider(this.starGroup, this.eship, this.destroyStar, null, this);
+
+    this.physics.add.collider(this.starGroup, this.bulletGroup, this.destroyStar2, null, this);
+    this.physics.add.collider(this.starGroup, this.eBulletGroup, this.destroyStar2, null, this);
+  }
+
+  // Create colliders for rocks
+  setRockColliders() {
+    this.physics.add.collider(this.rockGroup);
 
     this.physics.add.collider(this.rockGroup, this.ship, this.rockHitPlayer, null, this);
     this.physics.add.collider(this.rockGroup, this.eship, this.rockHitEnemy, null, this);
+
+    // Rocks + bullets
+    this.physics.add.collider(this.rockGroup, this.bulletGroup, this.destroyRock, null, this);
+    this.physics.add.collider(this.rockGroup, this.eBulletGroup, this.destroyRock, null, this);
   }
 
   makeInfo() {
-    this.text1 = this.add.text(0, 0, "Your Ship\n50",
+    this.playerHPText = this.add.text(0, 0, "Your Ship\n" + this.totalPlayerHP,
       {
-        fontSize: game.config.width / 30,
         align: "center",
+        fontFamily: "Varela Round",
+        fontSize: game.config.width / 30,
         backgroundColor: "rgba(0, 0, 0, 0.5)"
       }
     );
-    this.text2 = this.add.text(0, 0, "Mothership\n120",
+    this.enemyHPText = this.add.text(0, 0, "Mothership\n120",
       {
-        fontSize: game.config.width / 30,
         align: "center",
+        fontFamily: "Varela Round",
+        fontSize: game.config.width / 30,
+        backgroundColor: "rgba(0, 0, 0, 0.5)"
+      }
+    );
+    this.gameTimerText = this.add.text(0, 0, "00:00",
+      {
+        align: "center",
+        fontFamily: "Varela Round",
+        fontSize: game.config.width / 25,
         backgroundColor: "rgba(0, 0, 0, 0.5)"
       }
     );
 
-    this.text1.setOrigin(0.5, 0.5);
-    this.text2.setOrigin(0.5, 0.5);
+    this.playerHPText.setOrigin(0.5, 0.5);
+    this.enemyHPText.setOrigin(0.5, 0.5);
+    this.gameTimerText.setOrigin(0.5, 0.5);
 
     this.uiGrid = new AlignGrid({ scene: this, rows: 11, cols: 11 });
     // this.uiGrid.showNumbers();
 
-    this.uiGrid.placeAtIndex(2, this.text1);
-    this.uiGrid.placeAtIndex(8, this.text2);
+    this.uiGrid.placeAtIndex(2, this.playerHPText);
+    this.uiGrid.placeAtIndex(5, this.gameTimerText);
+    this.uiGrid.placeAtIndex(9, this.enemyHPText);
 
     // Icons of the ships
     this.icon1 = this.add.image(0, 0, "ship");
@@ -173,13 +240,14 @@ class SceneMain extends Phaser.Scene {
     Align.scaleToGameWidth(this.icon1, 0.05);
     Align.scaleToGameWidth(this.icon2, 0.05);
     this.uiGrid.placeAtIndex(0, this.icon1);
-    this.uiGrid.placeAtIndex(6, this.icon2);
+    this.uiGrid.placeAtIndex(7, this.icon2);
     this.icon1.angle = 270;
     this.icon2.angle = 270;
 
     // Fix the position of the texts
-    this.text1.setScrollFactor(0);
-    this.text2.setScrollFactor(0);
+    this.playerHPText.setScrollFactor(0);
+    this.enemyHPText.setScrollFactor(0);
+    this.gameTimerText.setScrollFactor(0);
     this.icon1.setScrollFactor(0);
     this.icon2.setScrollFactor(0);
   }
@@ -217,9 +285,9 @@ class SceneMain extends Phaser.Scene {
   }
 
   downPlayer() {
-    this.playerLife -= 1;
-    this.text1.setText("Your Ship\n" + this.playerLife);
-    if (this.playerLife === 0) {
+    this.playerLife -= 2;
+    this.playerHPText.setText("Your Ship\n" + this.playerLife);
+    if (this.playerLife < 1) {
       model.playerWon = false;
       this.scene.start("SceneOver");
     }
@@ -227,11 +295,71 @@ class SceneMain extends Phaser.Scene {
 
   downEnemy() {
     this.enemyLife -= 1;
-    this.text2.setText("Mothership\n" + this.enemyLife);
-    if (this.enemyLife === 0) {
+    this.enemyHPText.setText("Mothership\n" + this.enemyLife);
+    if (this.enemyLife < 1) {
       model.playerWon = true;
       this.scene.start("SceneOver");
     }
+  }
+
+  stopwatch() {
+    let minuteText = "";
+    let secondText = "";
+    let elapsed = Math.abs(this.lastSecond - this.getTimer());
+    if (elapsed < 1000) {
+      return;
+    }
+    this.lastSecond = this.getTimer();
+
+    // Seconds conditions
+    this.seconds += 1;
+
+    if (this.seconds === 60) {
+      this.spawnStar();
+      this.seconds = 0;
+      this.minutes += 1;
+    }
+
+    // Add zero for seconds
+    if (this.seconds < 10) {
+      secondText = "0" + this.seconds;
+    } else {
+      secondText = this.seconds;
+    }
+
+    // Add zero for minutes
+    if (this.minutes < 10) {
+      minuteText = "0" + this.minutes;
+    } else {
+      minuteText = this.minutes;
+    }
+
+    this.gameTimerText.setText(minuteText + ":" + secondText);
+  }
+
+  // Heals the player ship by 5 HP when the star is grabbed
+  healPlayer(ship, star) {
+    star.destroy();
+    emitter.emit(G.PLAY_STAR_SOUND, "starSound");
+    if (this.playerLife < 45) {
+      this.playerLife += 5;
+    } else {
+      this.playerLife = this.totalPlayerHP;
+    }
+    this.playerHPText.setText("Your Ship\n" + this.playerLife);
+  }
+
+  destroyStar(ship, star) {
+    const explosion = this.add.sprite(star.x, star.y, "exp");
+    explosion.play("boom");
+    star.destroy();
+  }
+
+  destroyStar2(star, bullet) {
+    const explosion = this.add.sprite(star.x, star.y, "exp");
+    explosion.play("boom");
+    bullet.destroy();
+    star.destroy();
   }
 
   rockHitPlayer(ship, rock) {
@@ -263,6 +391,7 @@ class SceneMain extends Phaser.Scene {
     angle = this.toDegrees(angle);
     this.ship.angle = angle;
 
+    // Gets the ship's distance from the target click
     let shipDistX = Math.abs(this.ship.x - this.targetX);
     let shipDistY = Math.abs(this.ship.y - this.targetY);
 
@@ -271,11 +400,11 @@ class SceneMain extends Phaser.Scene {
       let speed = 50;
 
       if (this.enemyLife < this.totalEL / 2) {
-        speed = 70;
+        speed = 75;
       }
 
       if (this.enemyLife < this.totalEL / 4) {
-        speed = 90;
+        speed = 99;
       }
 
       // Enemy ship movement
@@ -288,6 +417,58 @@ class SceneMain extends Phaser.Scene {
   getTimer() {
     const d = new Date();
     return d.getTime();
+  }
+
+  // KEYBOARD CONTROLS
+  moveUp() {
+    this.ship.setVelocityY(-100);
+    this.ship.angle = 270;
+    this.enemyShipChase();
+  }
+  moveDown() {
+    this.ship.setVelocityY(100);
+    this.ship.angle = 90;
+    this.enemyShipChase();
+  }
+  moveLeft() {
+    this.ship.setVelocityX(-100);
+    this.ship.angle = 180;
+    this.enemyShipChase();
+  }
+  moveRight() {
+    this.ship.setVelocityX(100);
+    this.ship.angle = 0;
+    this.enemyShipChase();
+  }
+
+  shiftSouthEast() {
+    this.ship.angle = 45;
+  }
+  shiftSouthWest() {
+    this.ship.angle = 135;
+  }
+  shiftNorthWest() {
+    this.ship.angle = 225;
+  }
+  shiftNorthEast() {
+    this.ship.angle = 315;
+  }
+
+  enemyShipChase() {
+    let speed = 50;
+
+    if (this.enemyLife < this.totalEL / 2) {
+      speed = 75;
+    }
+
+    if (this.enemyLife < this.totalEL / 4) {
+      speed = 99;
+    }
+
+    // Enemy ship movement
+    let enemyAngle = this.physics.moveTo(this.eship, this.ship.x, this.ship.y, speed);
+    enemyAngle = this.toDegrees(enemyAngle);
+    this.eship.angle = enemyAngle;
   }
 
   fireBullet() {
@@ -314,7 +495,7 @@ class SceneMain extends Phaser.Scene {
 
     const eBullet = this.physics.add.sprite(this.eship.x, this.eship.y, "ebullet");
     this.eBulletGroup.add(eBullet);
-    eBullet.body.angularVelocity = 10;
+    eBullet.body.angularVelocity = 20;
     this.physics.moveTo(eBullet, this.ship.x, this.ship.y, 100);
     emitter.emit(G.PLAY_SOUND, "enemyShoot");
   }
@@ -325,6 +506,8 @@ class SceneMain extends Phaser.Scene {
     const tx = Math.cos(rads);
     const ty = Math.sin(rads);
 
+    console.log(tx + " " + ty);
+
     return { tx, ty }
   }
 
@@ -334,6 +517,34 @@ class SceneMain extends Phaser.Scene {
   }
 
   update() {
+    this.stopwatch();
+    this.ship.setVelocityX(0);
+    this.ship.setVelocityY(0);
+
+    // Controls
+    const cursors = this.input.keyboard.createCursorKeys();
+
+    if (cursors.left.isDown) {
+      this.moveLeft();
+    } if (cursors.up.isDown) {
+      this.moveUp();
+    } if (cursors.down.isDown) {
+      this.moveDown();
+    } if (cursors.right.isDown) {
+      this.moveRight();
+    }
+
+    if (cursors.left.isDown && cursors.up.isDown) {
+      this.shiftNorthWest();
+    } else if (cursors.right.isDown && cursors.up.isDown) {
+      this.shiftNorthEast();
+    } else if (cursors.right.isDown && cursors.down.isDown) {
+      this.shiftSouthEast();
+    } else if (cursors.left.isDown && cursors.down.isDown) {
+      this.shiftSouthWest();
+    }
+
+
     // Detect proximity between _____
     let distanceX = Math.abs(this.ship.x - this.targetX);
     let distanceY = Math.abs(this.ship.y - this.targetY);

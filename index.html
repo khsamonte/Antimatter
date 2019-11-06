@@ -1,3 +1,12 @@
+<!--
+* File: index.js
+* Author: Ken
+*
+* The main HTML file that loads all the needed scripts
+* 
+* Copyright (C) November 2019, Ken Samonte
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,30 +16,43 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="./css/style.css">
   <title>Space Battle | Phaser 3</title>
+
+  <!-- Main files -->
   <script src="js/phaser.min.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/scenes/sceneLoad.js"></script>
-  <script src="js/scenes/sceneTitle.js"></script>
-  <script src="js/scenes/sceneMain.js"></script>
-  <script src="js/scenes/sceneOver.js"></script>
+  <script src="js/fontLoader.js"></script>
+  <script src="js/constants.js"></script>
+
+  <!-- Controller and Model -->
+  <script src="js/model/model.js"></script>
+  <script src="js/controller/controller.js"></script>
+
+  <!-- Components -->
+  <script src="js/components/Bar.js"></script>
+  <script src="js/components/scoreBox.js"></script>
+  <script src="js/components/FlatButton.js"></script>
+  <script src="js/components/toggleButton.js"></script>
+  <script src="js/components/soundButtons.js"></script>
+
+  <!-- Scenes -->
+  <script src="js/scenes/SceneLoad.js"></script>
+  <script src="js/scenes/SceneTitle.js"></script>
+  <script src="js/scenes/SceneMain.js"></script>
+  <script src="js/scenes/SceneOver.js"></script>
+
+  <!-- Utilities -->
   <script src="js/utils/alignGrid.js"></script>
   <script src="js/utils/align.js"></script>
   <script src="js/utils/collision.js"></script>
   <script src="js/utils/mediaManager.js"></script>
-  <script src="js/constants.js"></script>
-  <script src="js/mc/model.js"></script>
-  <script src="js/mc/controller.js"></script>
-  <script src="js/components/bar.js"></script>
-  <script src="js/components/scoreBox.js"></script>
-  <script src="js/ui/flatButton.js"></script>
-  <script src="js/ui/toggleButton.js"></script>
-  <script src="js/ui/soundButtons.js"></script>
 </head>
 
 <body>
   <div class="tint"></div>
   <div class="container">
+
     <div id="game"></div>
+
     <div class="rules">
       <h3>Welcome to SpaceBattle!</h3>
       <h4>Objective:</h4>
