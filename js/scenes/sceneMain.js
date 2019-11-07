@@ -20,6 +20,13 @@ class SceneMain extends Phaser.Scene {
     this.playerLife = this.totalPlayerHP;
     this.enemyLife = 120;
 
+    this.shipVelocity = 100;
+    this.shipVelocityDiag = 80;
+
+    // Player Batteries
+    this.batteries = 3;
+    this.stillBoosting = false;
+
     // Centre of the screen
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
@@ -45,9 +52,13 @@ class SceneMain extends Phaser.Scene {
     // this.background.on("pointerdown", this.backgroundClicked, this);
 
 
-    // Fire bullet on pressing "W"
+    // Fire bullet on pressing "C"
     this.fireKey = this.input.keyboard.addKey("C");
     this.fireKey.on("down", this.fireBullet, this);
+
+    // Use batteries on pressing "Z"
+    this.boostKey = this.input.keyboard.addKey("Z");
+    this.boostKey.on("down", this.boostShip, this);
 
     /**
      * SCROLLING BACKGROUND
@@ -90,6 +101,7 @@ class SceneMain extends Phaser.Scene {
     Align.scaleToGameWidth(this.eship, 0.25);
 
     this.makeInfo();
+    this.batteriesInfo();
     this.setColliders();
 
     // const sb = new SoundButtons({ scene: this });
@@ -235,21 +247,53 @@ class SceneMain extends Phaser.Scene {
     this.uiGrid.placeAtIndex(9, this.enemyHPText);
 
     // Icons of the ships
-    this.icon1 = this.add.image(0, 0, "ship");
-    this.icon2 = this.add.image(0, 0, "eship");
-    Align.scaleToGameWidth(this.icon1, 0.05);
-    Align.scaleToGameWidth(this.icon2, 0.05);
-    this.uiGrid.placeAtIndex(0, this.icon1);
-    this.uiGrid.placeAtIndex(7, this.icon2);
-    this.icon1.angle = 270;
-    this.icon2.angle = 270;
+    this.shipIcon = this.add.image(0, 0, "ship");
+    this.mothershipIcon = this.add.image(0, 0, "eship");
+    Align.scaleToGameWidth(this.shipIcon, 0.05);
+    Align.scaleToGameWidth(this.mothershipIcon, 0.05);
+    this.uiGrid.placeAtIndex(0, this.shipIcon);
+    this.uiGrid.placeAtIndex(7, this.mothershipIcon);
+    this.shipIcon.angle = 270;
+    this.mothershipIcon.angle = 270;
 
     // Fix the position of the texts
     this.playerHPText.setScrollFactor(0);
     this.enemyHPText.setScrollFactor(0);
     this.gameTimerText.setScrollFactor(0);
-    this.icon1.setScrollFactor(0);
-    this.icon2.setScrollFactor(0);
+    this.shipIcon.setScrollFactor(0);
+    this.mothershipIcon.setScrollFactor(0);
+  }
+
+  batteriesInfo() {
+    if (this.batteryIcon && this.batteryIcon2 && this.batteryIcon3) {
+      this.batteryIcon.destroy();
+      this.batteryIcon2.destroy();
+      this.batteryIcon3.destroy();
+    }
+
+    if (this.batteries > 0) {
+      this.batteryIcon = this.add.image(0, 0, "battery");
+      Align.scaleToGameWidth(this.batteryIcon, 0.05);
+      this.batteryIcon.x = 460;
+      this.batteryIcon.y = 90;
+      this.batteryIcon.setScrollFactor(0);
+    }
+
+    if (this.batteries > 1) {
+      this.batteryIcon2 = this.add.image(0, 0, "battery");
+      Align.scaleToGameWidth(this.batteryIcon2, 0.05);
+      this.batteryIcon2.x = 440;
+      this.batteryIcon2.y = 90;
+      this.batteryIcon2.setScrollFactor(0);
+    }
+
+    if (this.batteries > 2) {
+      this.batteryIcon3 = this.add.image(0, 0, "battery");
+      Align.scaleToGameWidth(this.batteryIcon3, 0.05);
+      this.batteryIcon3.x = 420;
+      this.batteryIcon3.y = 90;
+      this.batteryIcon3.setScrollFactor(0);
+    }
   }
 
   destroyRock(bullet, rock) {
@@ -425,64 +469,67 @@ class SceneMain extends Phaser.Scene {
 
   // KEYBOARD CONTROLS
   moveUp() {
-    this.ship.setVelocityY(-100);
+    this.ship.setVelocityY(-this.shipVelocity);
     this.ship.angle = 270;
     this.enemyShipChase();
   }
   moveDown() {
-    this.ship.setVelocityY(100);
+    this.ship.setVelocityY(this.shipVelocity);
     this.ship.angle = 90;
     this.enemyShipChase();
   }
   moveLeft() {
-    this.ship.setVelocityX(-100);
+    this.ship.setVelocityX(-this.shipVelocity);
     this.ship.angle = 180;
     this.enemyShipChase();
   }
   moveRight() {
-    this.ship.setVelocityX(100);
+    this.ship.setVelocityX(this.shipVelocity);
     this.ship.angle = 0;
     this.enemyShipChase();
   }
 
   shiftSouthEast() {
-    this.ship.setVelocityX(80);
-    this.ship.setVelocityY(80);
+    this.ship.setVelocityX(this.shipVelocityDiag);
+    this.ship.setVelocityY(this.shipVelocityDiag);
     this.ship.angle = 45;
   }
   shiftSouthWest() {
-    this.ship.setVelocityX(-80);
-    this.ship.setVelocityY(80);
+    this.ship.setVelocityX(-this.shipVelocityDiag);
+    this.ship.setVelocityY(this.shipVelocityDiag);
     this.ship.angle = 135;
   }
   shiftNorthWest() {
-    this.ship.setVelocityX(-80);
-    this.ship.setVelocityY(-80);
+    this.ship.setVelocityX(-this.shipVelocityDiag);
+    this.ship.setVelocityY(-this.shipVelocityDiag);
     this.ship.angle = 225;
   }
   shiftNorthEast() {
-    this.ship.setVelocityX(80);
-    this.ship.setVelocityY(-80);
+    this.ship.setVelocityX(this.shipVelocityDiag);
+    this.ship.setVelocityY(-this.shipVelocityDiag);
     this.ship.angle = 315;
   }
 
-  enemyShipChase() {
-    let mothershipSpeed = 50;
+  // Z
+  boostShip() {
+    if (!this.stillBoosting) {
+      if (this.batteries > 0) {
+        this.stillBoosting = true;
+        this.batteries -= 1;
+        this.shipVelocity = 200;
+        this.shipVelocityDiag = 180;
+        this.batteriesInfo();
 
-    if (this.enemyLife < this.totalEL / 2) {
-      mothershipSpeed = 65;
+        setTimeout(() => {
+          this.shipVelocity = 100;
+          this.shipVelocityDiag = 80;
+          this.stillBoosting = false;
+        }, 2000)
+      }
     }
-
-    if (this.enemyLife < this.totalEL / 4) {
-      mothershipSpeed = 80;
-    }
-
-    // Enemy ship movement
-    let enemyAngle = this.physics.moveTo(this.eship, this.ship.x, this.ship.y, mothershipSpeed);
-    enemyAngle = this.toDegrees(enemyAngle);
-    this.eship.angle = enemyAngle;
   }
 
+  // C
   fireBullet() {
     const dirObj = this.getDirFromAngle(this.ship.angle);
     const projectileSpeed = 200;
@@ -512,13 +559,28 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "enemyShoot");
   }
 
+  enemyShipChase() {
+    let mothershipSpeed = 50;
+
+    if (this.enemyLife < this.totalEL / 2) {
+      mothershipSpeed = 65;
+    }
+
+    if (this.enemyLife < this.totalEL / 4) {
+      mothershipSpeed = 80;
+    }
+
+    // Enemy ship movement
+    let enemyAngle = this.physics.moveTo(this.eship, this.ship.x, this.ship.y, mothershipSpeed);
+    enemyAngle = this.toDegrees(enemyAngle);
+    this.eship.angle = enemyAngle;
+  }
+
   // Get direction from angle
   getDirFromAngle(angle) {
     const rads = angle * Math.PI / 180;
     const tx = Math.cos(rads);
     const ty = Math.sin(rads);
-
-    console.log(tx + " " + ty);
 
     return { tx, ty }
   }
