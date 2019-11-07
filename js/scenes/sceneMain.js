@@ -38,6 +38,9 @@ class SceneMain extends Phaser.Scene {
     this.batteries = 0;
     this.stillBoosting = false;
 
+    // Shield
+    this.wearingShield = false;
+
     // Centre of the screen
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
@@ -67,13 +70,13 @@ class SceneMain extends Phaser.Scene {
     this.background.setInteractive();
     // this.background.on("pointerdown", this.backgroundClicked, this);
 
-    // Fire bullet on pressing "C"
-    this.fireKey = this.input.keyboard.addKey("C");
-    this.fireKey.on("down", this.fireBullet, this);
-
     // Use batteries on pressing "Z"
     this.boostKey = this.input.keyboard.addKey("Z");
     this.boostKey.on("down", this.boostShip, this);
+
+    // Fire bullet on pressing "C"
+    this.fireKey = this.input.keyboard.addKey("C");
+    this.fireKey.on("down", this.fireBullet, this);
 
     /**
      * SCROLLING BACKGROUND
@@ -98,6 +101,7 @@ class SceneMain extends Phaser.Scene {
     this.rockGroup = this.physics.add.group({});
     this.starGroup = this.physics.add.group({});
     this.batteryGroup = this.physics.add.group({});
+    this.shieldGroup = this.physics.add.group({});
 
     // Spawn asteroids
     this.makeRocks();
@@ -142,18 +146,12 @@ class SceneMain extends Phaser.Scene {
     vx = vx === 0 ? 1 : vx;
     vy = vy === 0 ? 1 : vy;
 
-    // Avoid immobile spawning of star
-    // if (vx === 0 && vy === 0) {
-    //   vx = 1;
-    //   vy = 1;
-    // }
-
     // Somewhere between 10 and 150
     const speed = Math.floor(Math.random() * 150 + 10);
 
     // Add the sprite
     const star = this.physics.add.sprite(xx, yy, "star");
-    Align.scaleToGameWidth(star, 0.06);
+    Align.scaleToGameWidth(star, 0.05);
     this.starGroup.add(star);
 
     // Set the interaction collision of the star
@@ -193,6 +191,36 @@ class SceneMain extends Phaser.Scene {
     battery.body.collideWorldBounds = true;
 
     this.setBatteryColliders();
+  }
+
+  spawnShield() {
+    // Random coordinates
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    // Apply physics to the batteries (-1, 0, 1)
+    let vx = Math.floor(Math.random() * 2) - 1;
+    let vy = Math.floor(Math.random() * 2) - 1;
+
+    // Avoid immobile spawning of battery
+    vx = vx === 0 ? 1 : vx;
+    vy = vy === 0 ? 1 : vy;
+
+    // Somewhere between 10 and 50
+    const speed = Math.floor(Math.random() * 50 + 10);
+
+    // Add the sprite
+    const shield = this.physics.add.sprite(xx, yy, "shield");
+    Align.scaleToGameWidth(shield, 0.1);
+    this.shieldGroup.add(shield);
+
+    // Set the interaction collision of the battery
+    shield.body.setVelocity(vx * speed, vy * speed);
+    shield.body.bounce.setTo(1, 1);
+    shield.body.angularVelocity = 1;
+    shield.body.collideWorldBounds = true;
+
+    this.setShieldGroupColliders();
   }
 
   // Create the rock groups
@@ -302,6 +330,40 @@ class SceneMain extends Phaser.Scene {
       this.batteryGroup,
       this.ship,
       this.obtainBattery,
+      null,
+      this
+    );
+  }
+
+  setShieldColliders() {
+    this.physics.add.collider(
+      this.rockGroup,
+      this.shield,
+      this.destroyRockOnly,
+      null,
+      this
+    );
+
+    this.physics.add.collider(
+      this.shield,
+      this.eBulletGroup,
+      this.destroyEBullet,
+      null,
+      this
+    );
+  }
+
+  setShieldGroupColliders() {
+    this.physics.add.collider(this.shieldGroup, this.eship);
+    this.physics.add.collider(this.shieldGroup, this.rockGroup);
+    this.physics.add.collider(this.shieldGroup, this.starGroup);
+    this.physics.add.collider(this.shieldGroup, this.batteryGroup);
+
+    // Ship obtains battery
+    this.physics.add.collider(
+      this.shieldGroup,
+      this.ship,
+      this.useShield,
       null,
       this
     );
@@ -444,13 +506,33 @@ class SceneMain extends Phaser.Scene {
     this.makeRocks();
   }
 
+  destroyRockOnly(object, rock) {
+    rock.destroy();
+
+    // Add the sprite image then play the animation
+    const explosion = this.add.sprite(rock.x, rock.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+  }
+
+  destroyEBullet(shield, eBullet) {
+    eBullet.destroy();
+
+    // Add the sprite image then play the animation
+    const explosion = this.add.sprite(eBullet.x, eBullet.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+  }
+
   damagePlayer(ship, bullet) {
     const explosion = this.add.sprite(this.ship.x, this.ship.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
-    this.playerLife -= 2;
-    this.downPlayer();
-    bullet.destroy();
+    if (!this.wearingShield) {
+      this.playerLife -= 2;
+      this.downPlayer();
+      bullet.destroy();
+    }
   }
 
   damageEnemy(ship, bullet) {
@@ -499,12 +581,19 @@ class SceneMain extends Phaser.Scene {
     // Seconds conditions
     this.seconds += 1;
 
+    // Spawns a star every 20 seconds
     if (this.seconds % 20 === 0) {
       this.spawnStar();
     }
 
+    // Spawns a battery every 30 seconds
     if (this.seconds % 30 === 0) {
       this.spawnBattery();
+    }
+
+    // Spawns a shield every 40th second of a minute
+    if (this.seconds % 40 === 0) {
+      this.spawnShield();
     }
 
     if (this.seconds === 60) {
@@ -569,8 +658,11 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "explode");
     rock.destroy();
     this.makeRocks();
-    this.playerLife -= 1;
-    this.downPlayer();
+
+    if (!this.wearingShield) {
+      this.playerLife -= 1;
+      this.downPlayer();
+    }
   }
 
   rockHitEnemy(ship, rock) {
@@ -645,6 +737,9 @@ class SceneMain extends Phaser.Scene {
   moveRight() {
     this.ship.setVelocityX(this.shipVelocity);
     this.ship.angle = 0;
+    // this.shield.x = this.ship.x;
+    // this.shield.y = this.ship.y;
+    // this.shield.angle = this.ship.angle;
     this.enemyShipChase();
   }
 
@@ -685,6 +780,36 @@ class SceneMain extends Phaser.Scene {
           this.stillBoosting = false;
         }, 2000);
       }
+    }
+  }
+
+  // X
+  useShield(ship, shield) {
+    if (!this.wearingShield) {
+      shield.destroy();
+      this.wearingShield = true;
+
+      this.shield = this.physics.add.sprite(this.ship.x, this.ship.y, "shield");
+      Align.scaleToGameWidth(this.shield, 0.225);
+      this.setShieldColliders();
+
+      // Callback
+      this.time.delayedCall(10000, this.removeShield, [], this);
+    }
+  }
+
+  removeShield() {
+    if (this.wearingShield) {
+      this.shield.destroy();
+      this.wearingShield = false;
+    }
+  }
+
+  paintShield() {
+    if (this.shield) {
+      this.shield.x = this.ship.x;
+      this.shield.y = this.ship.y;
+      this.shield.angle = this.ship.angle;
     }
   }
 
@@ -769,6 +894,11 @@ class SceneMain extends Phaser.Scene {
     this.stopwatch();
     this.ship.setVelocityX(0);
     this.ship.setVelocityY(0);
+
+    if (this.shield) {
+      this.paintShield();
+      this.shield.alpha -= 0.0015;
+    }
 
     // Controls
     const cursors = this.input.keyboard.createCursorKeys();
