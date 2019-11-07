@@ -1,10 +1,10 @@
 /**
-* File: main.js
-* Author: Ken
-*
-* The configuration of the entire game.
-*
-* Copyright (C) November 2019, Ken Samonte
+ * File: main.js
+ * Author: Ken
+ *
+ * The configuration of the entire game.
+ *
+ * Copyright (C) November 2019, Ken Samonte
  */
 
 let game;
@@ -14,7 +14,7 @@ let G;
 let controller;
 let config;
 
-window.onload = function () {
+window.onload = function() {
   // Looks at navigator.userAgent (built in every browser for detecting mobiles)
   let isMobile = navigator.userAgent.indexOf("Mobile");
   if (isMobile === -1) {
@@ -25,8 +25,8 @@ window.onload = function () {
   if (isMobile === -1) {
     config = {
       type: Phaser.AUTO,
-      width: 480,
-      height: 640,
+      width: 435,
+      height: 580,
       parent: "game",
       physics: {
         default: "arcade",
@@ -35,7 +35,7 @@ window.onload = function () {
         }
       },
       scene: [SceneLoad, SceneTitle, SceneMain, SceneOver]
-    }
+    };
   } else {
     config = {
       type: Phaser.AUTO,
@@ -49,7 +49,7 @@ window.onload = function () {
         }
       },
       scene: [SceneLoad, SceneTitle, SceneMain, SceneOver]
-    }
+    };
   }
 
   // Global instances
@@ -57,4 +57,4 @@ window.onload = function () {
   model = new Model();
   model.isMobile = isMobile;
   game = new Phaser.Game(config);
-}
+};

@@ -33,7 +33,7 @@ class SceneTitle extends Phaser.Scene {
 
     // Displays a static sprite of the player's ship
     const staticShip = this.add.image(0, 0, "ship");
-    this.alignGrid.placeAtIndex(60, ship);
+    this.alignGrid.placeAtIndex(60, staticShip);
     Align.scaleToGameWidth(staticShip, 0.125);
 
     // Creates the start button

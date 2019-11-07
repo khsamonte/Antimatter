@@ -35,7 +35,7 @@ class SceneMain extends Phaser.Scene {
     this.shipVelocityDiag = 80;
 
     // Player Batteries
-    this.batteries = 3;
+    this.batteries = 0;
     this.stillBoosting = false;
 
     // Centre of the screen
@@ -97,8 +97,10 @@ class SceneMain extends Phaser.Scene {
     this.eBulletGroup = this.physics.add.group({});
     this.rockGroup = this.physics.add.group({});
     this.starGroup = this.physics.add.group({});
+    this.batteryGroup = this.physics.add.group({});
+
+    // Spawn asteroids
     this.makeRocks();
-    this.spawnStar();
 
     // Explosion frames and animation
     const expFrames = this.anims.generateFrameNumbers("exp");
@@ -136,11 +138,15 @@ class SceneMain extends Phaser.Scene {
     let vx = Math.floor(Math.random() * 2) - 1;
     let vy = Math.floor(Math.random() * 2) - 1;
 
-    // Avoid immobile spawning of asteroid
-    if (vx === 0 && vy === 0) {
-      vx = 1;
-      vy = 1;
-    }
+    // Avoid immobile spawning of star
+    vx = vx === 0 ? 1 : vx;
+    vy = vy === 0 ? 1 : vy;
+
+    // Avoid immobile spawning of star
+    // if (vx === 0 && vy === 0) {
+    //   vx = 1;
+    //   vy = 1;
+    // }
 
     // Somewhere between 10 and 150
     const speed = Math.floor(Math.random() * 150 + 10);
@@ -150,13 +156,43 @@ class SceneMain extends Phaser.Scene {
     Align.scaleToGameWidth(star, 0.06);
     this.starGroup.add(star);
 
-    // Set the
+    // Set the interaction collision of the star
     star.body.setVelocity(vx * speed, vy * speed);
     star.body.bounce.setTo(1, 1);
     star.body.angularVelocity = 1;
     star.body.collideWorldBounds = true;
 
     this.setStarColliders();
+  }
+
+  spawnBattery() {
+    // Random coordinates
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    // Apply physics to the batteries (-1, 0, 1)
+    let vx = Math.floor(Math.random() * 2) - 1;
+    let vy = Math.floor(Math.random() * 2) - 1;
+
+    // Avoid immobile spawning of battery
+    vx = vx === 0 ? 1 : vx;
+    vy = vy === 0 ? 1 : vy;
+
+    // Somewhere between 10 and 50
+    const speed = Math.floor(Math.random() * 50 + 10);
+
+    // Add the sprite
+    const battery = this.physics.add.sprite(xx, yy, "battery");
+    Align.scaleToGameWidth(battery, 0.03);
+    this.batteryGroup.add(battery);
+
+    // Set the interaction collision of the battery
+    battery.body.setVelocity(vx * speed, vy * speed);
+    battery.body.bounce.setTo(1, 1);
+    battery.body.angularVelocity = 1;
+    battery.body.collideWorldBounds = true;
+
+    this.setBatteryColliders();
   }
 
   // Create the rock groups
@@ -255,6 +291,22 @@ class SceneMain extends Phaser.Scene {
     );
   }
 
+  setBatteryColliders() {
+    this.physics.add.collider(this.batteryGroup);
+    this.physics.add.collider(this.batteryGroup, this.eship);
+    this.physics.add.collider(this.batteryGroup, this.rockGroup);
+    this.physics.add.collider(this.batteryGroup, this.starGroup);
+
+    // Ship obtains battery
+    this.physics.add.collider(
+      this.batteryGroup,
+      this.ship,
+      this.obtainBattery,
+      null,
+      this
+    );
+  }
+
   // Create colliders for rocks
   setRockColliders() {
     this.physics.add.collider(this.rockGroup);
@@ -346,33 +398,36 @@ class SceneMain extends Phaser.Scene {
   }
 
   batteriesInfo() {
-    if (this.batteryIcon && this.batteryIcon2 && this.batteryIcon3) {
+    if (this.batteryIcon) {
       this.batteryIcon.destroy();
+    }
+    if (this.batteryIcon2) {
       this.batteryIcon2.destroy();
+    }
+    if (this.batteryIcon3) {
       this.batteryIcon3.destroy();
     }
 
     if (this.batteries > 0) {
       this.batteryIcon = this.add.image(0, 0, "battery");
-      Align.scaleToGameWidth(this.batteryIcon, 0.05);
-      this.batteryIcon.x = 460;
-      this.batteryIcon.y = 90;
+      Align.scaleToGameWidth(this.batteryIcon, 0.025);
+      this.uiGrid.placeAtIndex(21, this.batteryIcon);
       this.batteryIcon.setScrollFactor(0);
     }
 
     if (this.batteries > 1) {
       this.batteryIcon2 = this.add.image(0, 0, "battery");
-      Align.scaleToGameWidth(this.batteryIcon2, 0.05);
-      this.batteryIcon2.x = 440;
-      this.batteryIcon2.y = 90;
+      Align.scaleToGameWidth(this.batteryIcon2, 0.025);
+      this.batteryIcon2.x = this.batteryIcon.x - game.config.width * 0.035;
+      this.batteryIcon2.y = this.batteryIcon.y;
       this.batteryIcon2.setScrollFactor(0);
     }
 
     if (this.batteries > 2) {
       this.batteryIcon3 = this.add.image(0, 0, "battery");
-      Align.scaleToGameWidth(this.batteryIcon3, 0.05);
-      this.batteryIcon3.x = 420;
-      this.batteryIcon3.y = 90;
+      Align.scaleToGameWidth(this.batteryIcon3, 0.025);
+      this.batteryIcon3.x = this.batteryIcon2.x - game.config.width * 0.035;
+      this.batteryIcon3.y = this.batteryIcon.y;
       this.batteryIcon3.setScrollFactor(0);
     }
   }
@@ -448,6 +503,10 @@ class SceneMain extends Phaser.Scene {
       this.spawnStar();
     }
 
+    if (this.seconds % 30 === 0) {
+      this.spawnBattery();
+    }
+
     if (this.seconds === 60) {
       this.seconds = 0;
       this.minutes += 1;
@@ -480,6 +539,15 @@ class SceneMain extends Phaser.Scene {
       this.playerLife = this.totalPlayerHP;
     }
     this.playerHPText.setText("Your Ship\n" + this.playerLife);
+  }
+
+  obtainBattery(ship, battery) {
+    battery.destroy();
+    emitter.emit(G.PLAY_STAR_SOUND, "starSound");
+    if (this.batteries < 3) {
+      this.batteries += 1;
+      this.batteriesInfo();
+    }
   }
 
   destroyStar(ship, star) {

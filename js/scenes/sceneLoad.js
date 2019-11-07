@@ -14,7 +14,11 @@ class SceneLoad extends Phaser.Scene {
 
   preload() {
     // Creates an instance of the loading progress bar
-    this.bar = new Bar({ scene: this, x: 240, y: 320 });
+    this.bar = new Bar({
+      scene: this,
+      x: game.config.width / 2,
+      y: game.config.height / 2
+    });
     this.bar.setPercent(0.5);
 
     // The percentage text displayed in the loading bar
