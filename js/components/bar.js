@@ -1,10 +1,10 @@
 /**
-* File: Bar.js
-* Author: Ken
-*
-* The component of the loading progress bar.
-*
-* Copyright (C) November 2019, Ken Samonte
+ * File: Bar.js
+ * Author: Ken
+ *
+ * The component of the loading progress bar.
+ *
+ * Copyright (C) November 2019, Ken Samonte
  */
 
 class Bar extends Phaser.GameObjects.Container {

@@ -1,3 +1,12 @@
+/**
+ * File: Model.js
+ * Author: Ken
+ *
+ * THe global state management.
+ *
+ * Copyright (C) November 2019, Ken Samonte
+ */
+
 class Model {
   constructor() {
     this._score = 0;
@@ -7,7 +16,7 @@ class Model {
   }
 
   set musicOn(val) {
-    this._musicOn = val
+    this._musicOn = val;
     emitter.emit(G.MUSIC_CHANGED);
   }
 

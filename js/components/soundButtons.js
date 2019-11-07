@@ -1,3 +1,12 @@
+/**
+ * File: SoundButtons.js
+ * Author: Ken
+ *
+ * The main object that allows control over the sound in the game.
+ *
+ * Copyright (C) November 2019, Ken Samonte
+ */
+
 class SoundButtons extends Phaser.GameObjects.Container {
   constructor(config) {
     super(config.scene);
@@ -9,7 +18,7 @@ class SoundButtons extends Phaser.GameObjects.Container {
       onIcon: "musicOn",
       offIcon: "musicOff",
       event: G.TOGGLE_MUSIC
-    })
+    });
 
     this.sfxButton = new ToggleButton({
       scene: this.scene,
@@ -17,7 +26,7 @@ class SoundButtons extends Phaser.GameObjects.Container {
       onIcon: "sfxOn",
       offIcon: "sfxOff",
       event: G.TOGGLE_SOUND
-    })
+    });
 
     this.add(this.musicButton);
     this.add(this.sfxButton);

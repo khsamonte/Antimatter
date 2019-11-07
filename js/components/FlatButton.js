@@ -1,10 +1,10 @@
 /**
-* File: FlatButton.js
-* Author: Ken
-*
-* The button used in the Title and GameOver screens.
-*
-* Copyright (C) November 2019, Ken Samonte
+ * File: FlatButton.js
+ * Author: Ken
+ *
+ * The button used in the Title and GameOver screens.
+ *
+ * Copyright (C) November 2019, Ken Samonte
  */
 
 class FlatButton extends Phaser.GameObjects.Container {
@@ -64,6 +64,5 @@ class FlatButton extends Phaser.GameObjects.Container {
     } else {
       emitter.emit(this.config.event);
     }
-
   }
 }

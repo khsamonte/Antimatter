@@ -1,3 +1,12 @@
+/**
+ * File: ToggleButton.js
+ * Author: Ken
+ *
+ * The generic button that allows toggle functionality.
+ *
+ * Copyright (C) November 2019, Ken Samonte
+ */
+
 class ToggleButton extends Phaser.GameObjects.Container {
   constructor(config) {
     super(config.scene);
@@ -7,7 +16,7 @@ class ToggleButton extends Phaser.GameObjects.Container {
     this.onIcon = this.scene.add.image(0, 0, config.onIcon);
     this.offIcon = this.scene.add.image(0, 0, config.offIcon);
 
-    Align.scaleToGameWidth(this.background, .10);
+    Align.scaleToGameWidth(this.background, 0.1);
     Align.scaleToGameWidth(this.onIcon, 0.05);
     Align.scaleToGameWidth(this.offIcon, 0.05);
 
