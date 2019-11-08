@@ -190,8 +190,8 @@ class SceneMain extends Phaser.Scene {
 
   spawnStar() {
     // Add the sprite
-    const position = randomiseInitialPos();
-    const velocity = randomiseInitialVelocity(150);
+    const position = this.randomiseInitialPos();
+    const velocity = this.randomiseInitialVelocity(150);
 
     const star = this.physics.add.sprite(position.xx, position.yy, "star");
     Align.scaleToGameWidth(star, 0.05);
