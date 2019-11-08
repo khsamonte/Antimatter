@@ -10,7 +10,7 @@ body {
   align-items: flex-start;
   display: flex;
   justify-content: center;
-  padding-top: 20px;
+  padding-top: 50px;
   position: relative;
   z-index: 100;
 }
@@ -31,9 +31,9 @@ body {
   box-sizing: border-box;
   color: rgba(255, 255, 255, 0.7);
   font-family: Arial, sans-serif;
-  height: 580px;
+  height: 640px;
   padding: 32px;
-  max-width: 350px;
+  max-width: 380px;
 }
 
 .rules h3 {
