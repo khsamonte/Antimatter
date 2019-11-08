@@ -159,12 +159,19 @@ class SceneMain extends Phaser.Scene {
    * ----------------
    */
 
-  createObjectWithPhysics(obj, speedLimit) {
-    // Set random coordinates where the object will spawn
-    const xx = Math.floor(Math.random() * this.background.displayWidth);
-    const yy = Math.floor(Math.random() * this.background.displayHeight);
+  // Set random position coordinates where the object will spawn
+  randomiseInitialPos() {
+    const xPos = Math.floor(Math.random() * this.background.displayWidth);
+    const yPos = Math.floor(Math.random() * this.background.displayHeight);
 
-    // Set random velocity physics to the object
+    return {
+      xx: xPos,
+      xy: yPos
+    };
+  }
+
+  // Set random initial velocity physics to the object
+  randomiseInitialVelocity(speedLimit) {
     let vx = Math.floor(Math.random() * 2) - 1;
     let vy = Math.floor(Math.random() * 2) - 1;
 
@@ -175,23 +182,26 @@ class SceneMain extends Phaser.Scene {
     // Somewhere between 10 and speedLimit
     const speed = Math.floor(Math.random() * speedLimit + 10);
 
-    // Add the sprite
-    const object = this.physics.add.sprite(xx, yy, obj);
-
-    // Set the interaction collision of the object
-    object.body.setVelocity(vx * speed, vy * speed);
-    object.body.bounce.setTo(1, 1);
-    object.body.angularVelocity = 1;
-    object.body.collideWorldBounds = true;
-
-    return object;
+    return {
+      x: vx * speed,
+      y: vy * speed
+    };
   }
 
   spawnStar() {
     // Add the sprite
-    const star = this.createObjectWithPhysics("star", 150);
+    const position = randomiseInitialPos();
+    const velocity = randomiseInitialVelocity(150);
+
+    const star = this.physics.add.sprite(position.xx, position.yy, "star");
     Align.scaleToGameWidth(star, 0.05);
     this.starGroup.add(star);
+
+    // Set the interaction collision of the object
+    star.body.setVelocity(velocity.x, velocity.y);
+    star.body.bounce.setTo(1, 1);
+    star.body.angularVelocity = 1;
+    star.body.collideWorldBounds = true;
 
     this.setStarColliders();
   }
