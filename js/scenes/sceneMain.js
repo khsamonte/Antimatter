@@ -189,7 +189,7 @@ class SceneMain extends Phaser.Scene {
 
   spawnStar() {
     // Add the sprite
-    const star = createObjectWithPhysics("star");
+    const star = createObjectWithPhysics("star", 150);
     Align.scaleToGameWidth(star, 0.05);
     this.starGroup.add(star);
 
