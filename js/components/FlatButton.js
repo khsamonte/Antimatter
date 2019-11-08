@@ -9,6 +9,7 @@
 
 class FlatButton extends Phaser.GameObjects.Container {
   constructor(config) {
+    // Requires a key and scene config
     if (!config.scene) {
       console.log("Missing scene!");
       return;

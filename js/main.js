@@ -25,8 +25,10 @@ window.onload = function() {
   if (isMobile === -1) {
     config = {
       type: Phaser.AUTO,
-      width: 435,
-      height: 580,
+      // width: 435,
+      // height: 580,
+      width: 480,
+      height: 640,
       parent: "game",
       physics: {
         default: "arcade",
