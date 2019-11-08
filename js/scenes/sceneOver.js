@@ -22,7 +22,6 @@ class SceneOver extends Phaser.Scene {
       cols: 11,
       scene: this
     });
-    // this.alignGrid.showNumbers();
 
     // The text displayed declaring whether the player won or lost
     this.winnerText = this.add.text(

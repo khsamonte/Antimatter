@@ -18,19 +18,27 @@ class SceneMain extends Phaser.Scene {
     controller = new Controller();
     const mediaManager = new MediaManager({ scene: this });
 
-    // Game Condition
+    // Game Condition (Win / Lose)
     model.playerWon = true;
+
+    /**
+     * ----------------
+     * Game Stats
+     * ----------------
+     */
 
     // Initialise stopwatch components
     this.seconds = 0;
     this.minutes = 0;
 
     // Initialise HP
-    this.totalPlayerHP = 70;
-    this.totalEL = 120;
-    this.playerLife = this.totalPlayerHP;
-    this.enemyLife = 120;
+    this.totalPlayerLife = 70;
+    this.totalEnemyLife = 120;
 
+    this.playerHP = this.totalPlayerLife;
+    this.enemyHP = 120;
+
+    // Default ship velocity (diagonal)
     this.shipVelocity = 100;
     this.shipVelocityDiag = 80;
 
@@ -45,70 +53,32 @@ class SceneMain extends Phaser.Scene {
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
 
+    /**
+     * ----------------
+     * Add images, sprites, and animations
+     * ----------------
+     */
+
     // Add background image
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
-    // Add ship to the centre of the screen
+    // Add the player ship to the centre of the screen
     this.ship = this.physics.add.sprite(this.centerX, this.centerY, "ship");
     this.ship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.ship, 0.125);
 
-    // Scale background just like how ship is scaled
+    // Add the enemy ship to the top centre of the screen
+    this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
+    this.eship.body.collideWorldBounds = true;
+    Align.scaleToGameWidth(this.eship, 0.25);
+
+    // Scale background relative to the scaling of the ship
     this.background.scaleX = this.ship.scaleX;
     this.background.scaleY = this.ship.scaleY;
 
-    // Sets the boundaries of the world as the total w and h of the space image
-    this.physics.world.setBounds(
-      0,
-      0,
-      this.background.displayWidth,
-      this.background.displayHeight
-    );
-
-    // Make background listen to events (to move the ship)
-    this.background.setInteractive();
-    // this.background.on("pointerdown", this.backgroundClicked, this);
-
-    // Use batteries on pressing "Z"
-    this.boostKey = this.input.keyboard.addKey("Z");
-    this.boostKey.on("down", this.boostShip, this);
-
-    // Fire bullet on pressing "C"
-    this.fireKey = this.input.keyboard.addKey("C");
-    this.fireKey.on("down", this.fireBullet, this);
-
-    /**
-     * SCROLLING BACKGROUND
-     * Set the bounds for camera according to the space image
-     * Have the camera follow the ship
-     */
-    this.cameras.main.setBounds(
-      0,
-      0,
-      this.background.displayWidth,
-      this.background.displayHeight
-    );
-    this.cameras.main.startFollow(this.ship, true);
-
-    /**
-     * Add a bunch of sprites into the group
-     * frameQuantity is the amount to be spawned per frame
-     *
-     */
-    this.bulletGroup = this.physics.add.group({});
-    this.eBulletGroup = this.physics.add.group({});
-    this.rockGroup = this.physics.add.group({});
-    this.starGroup = this.physics.add.group({});
-    this.batteryGroup = this.physics.add.group({});
-    this.shieldGroup = this.physics.add.group({});
-
-    // Spawn asteroids
-    this.makeRocks();
-
-    // Explosion frames and animation
+    // Explosion frames and animation (small to big)
     const expFrames = this.anims.generateFrameNumbers("exp");
-    // Small to big
     const expFrames2 = expFrames.slice();
     expFrames2.reverse();
     const expFrames3 = expFrames2.concat(expFrames);
@@ -121,47 +91,140 @@ class SceneMain extends Phaser.Scene {
       repeat: false
     });
 
-    // Adding the enemy ship!
-    this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
-    this.eship.body.collideWorldBounds = true;
-    Align.scaleToGameWidth(this.eship, 0.25);
+    /**
+     * ----------------
+     * Keyboard Events
+     * ----------------
+     */
 
+    // Use turbo by pressing "Z"
+    this.boostKey = this.input.keyboard.addKey("Z");
+    this.boostKey.on("down", this.boostShip, this);
+
+    // Fire lasers by pressing "C"
+    this.fireKey = this.input.keyboard.addKey("C");
+    this.fireKey.on("down", this.fireBullet, this);
+
+    /**
+     * ----------------
+     * Initialising the world and camera
+     * ----------------
+     */
+
+    /**
+     * Set the boundaries of the world as the
+     * total w and h of the background image.
+     */
+    this.physics.world.setBounds(
+      0,
+      0,
+      this.background.displayWidth,
+      this.background.displayHeight
+    );
+
+    /**
+     * Scrolling Background Effect:
+     * Set the bounds for camera according to the background image
+     * Then have the camera follow the ship
+     */
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.background.displayWidth,
+      this.background.displayHeight
+    );
+    this.cameras.main.startFollow(this.ship, true);
+
+    // Groups allow similar objects to have uniform behaviour
+    this.bulletGroup = this.physics.add.group({});
+    this.eBulletGroup = this.physics.add.group({});
+    this.rockGroup = this.physics.add.group({});
+    this.starGroup = this.physics.add.group({});
+    this.batteryGroup = this.physics.add.group({});
+    this.shieldGroup = this.physics.add.group({});
+
+    // Generate the information panels then set asteroids and colliders
     this.makeInfo();
     this.batteriesInfo();
+    this.spawnAsteroids();
     this.setColliders();
 
+    // TODO: Sound Buttons for mobile
     // const sb = new SoundButtons({ scene: this });
   }
 
-  spawnStar() {
-    // Random coordinates
+  /**
+   * ----------------
+   * Generating Objects Methods
+   * ----------------
+   */
+
+  createObjectWithPhysics(obj, speedLimit) {
+    // Set random coordinates where the object will spawn
     const xx = Math.floor(Math.random() * this.background.displayWidth);
     const yy = Math.floor(Math.random() * this.background.displayHeight);
 
-    // Apply physics to the stars (-1, 0, 1)
+    // Set random velocity physics to the object
     let vx = Math.floor(Math.random() * 2) - 1;
     let vy = Math.floor(Math.random() * 2) - 1;
 
-    // Avoid immobile spawning of star
+    // Disallow static velocity
     vx = vx === 0 ? 1 : vx;
     vy = vy === 0 ? 1 : vy;
 
-    // Somewhere between 10 and 150
-    const speed = Math.floor(Math.random() * 150 + 10);
+    // Somewhere between 10 and speedLimit
+    const speed = Math.floor(Math.random() * speedLimit + 10);
 
     // Add the sprite
-    const star = this.physics.add.sprite(xx, yy, "star");
+    const object = this.physics.add.sprite(xx, yy, obj);
+
+    // Set the interaction collision of the object
+    object.body.setVelocity(vx * speed, vy * speed);
+    object.body.bounce.setTo(1, 1);
+    object.body.angularVelocity = 1;
+    object.body.collideWorldBounds = true;
+
+    return object;
+  }
+
+  spawnStar() {
+    // Add the sprite
+    const star = createObjectWithPhysics("star");
     Align.scaleToGameWidth(star, 0.05);
     this.starGroup.add(star);
 
-    // Set the interaction collision of the star
-    star.body.setVelocity(vx * speed, vy * speed);
-    star.body.bounce.setTo(1, 1);
-    star.body.angularVelocity = 1;
-    star.body.collideWorldBounds = true;
-
     this.setStarColliders();
   }
+
+  // spawnStar() {
+  //   // Random coordinates
+  //   const xx = Math.floor(Math.random() * this.background.displayWidth);
+  //   const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+  //   // Apply physics to the stars (-1, 0, 1)
+  //   let vx = Math.floor(Math.random() * 2) - 1;
+  //   let vy = Math.floor(Math.random() * 2) - 1;
+
+  //   // Avoid immobile spawning of star
+  //   vx = vx === 0 ? 1 : vx;
+  //   vy = vy === 0 ? 1 : vy;
+
+  //   // Somewhere between 10 and 150
+  //   const speed = Math.floor(Math.random() * 150 + 10);
+
+  //   // Add the sprite
+  //   const star = this.physics.add.sprite(xx, yy, "star");
+  //   Align.scaleToGameWidth(star, 0.05);
+  //   this.starGroup.add(star);
+
+  //   // Set the interaction collision of the star
+  //   star.body.setVelocity(vx * speed, vy * speed);
+  //   star.body.bounce.setTo(1, 1);
+  //   star.body.angularVelocity = 1;
+  //   star.body.collideWorldBounds = true;
+
+  //   this.setStarColliders();
+  // }
 
   spawnBattery() {
     // Random coordinates
@@ -223,8 +286,12 @@ class SceneMain extends Phaser.Scene {
     this.setShieldGroupColliders();
   }
 
-  // Create the rock groups
-  makeRocks() {
+  // Generate 12 asteroids if all asteroids have exploded
+  spawnAsteroids() {
+    /**
+     * Add a bunch of sprites into the group
+     * frameQuantity is the amount to be spawned per frame
+     */
     if (this.rockGroup.getChildren().length === 0) {
       this.rockGroup = this.physics.add.group({
         key: "rocks",
@@ -409,7 +476,7 @@ class SceneMain extends Phaser.Scene {
     this.playerHPText = this.add.text(
       0,
       0,
-      "Your Ship\n" + this.totalPlayerHP,
+      "Your Ship\n" + this.totalPlayerLife,
       {
         align: "center",
         fontFamily: "Varela Round",
@@ -503,7 +570,7 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "explode");
 
     rock.destroy();
-    this.makeRocks();
+    this.spawnAsteroids();
   }
 
   destroyRockOnly(object, rock) {
@@ -529,7 +596,7 @@ class SceneMain extends Phaser.Scene {
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
     if (!this.wearingShield) {
-      this.playerLife -= 2;
+      this.playerHP -= 2;
       this.downPlayer();
       bullet.destroy();
     }
@@ -553,17 +620,17 @@ class SceneMain extends Phaser.Scene {
   }
 
   downPlayer() {
-    this.playerHPText.setText("Your Ship\n" + this.playerLife);
-    if (this.playerLife < 1) {
+    this.playerHPText.setText("Your Ship\n" + this.playerHP);
+    if (this.playerHP < 1) {
       model.playerWon = false;
       this.scene.start("SceneOver");
     }
   }
 
   downEnemy() {
-    this.enemyLife -= 1;
-    this.enemyHPText.setText("Mothership\n" + this.enemyLife);
-    if (this.enemyLife < 1) {
+    this.enemyHP -= 1;
+    this.enemyHPText.setText("Mothership\n" + this.enemyHP);
+    if (this.enemyHP < 1) {
       model.playerWon = true;
       this.scene.start("SceneOver");
     }
@@ -582,7 +649,7 @@ class SceneMain extends Phaser.Scene {
     this.seconds += 1;
 
     // Spawns a star every 20 seconds
-    if (this.seconds % 20 === 0) {
+    if (this.seconds % 5 === 0) {
       this.spawnStar();
     }
 
@@ -622,12 +689,12 @@ class SceneMain extends Phaser.Scene {
   healPlayer(ship, star) {
     star.destroy();
     emitter.emit(G.PLAY_STAR_SOUND, "starSound");
-    if (this.playerLife < 68) {
-      this.playerLife += 2;
+    if (this.playerHP < 68) {
+      this.playerHP += 2;
     } else {
-      this.playerLife = this.totalPlayerHP;
+      this.playerHP = this.totalPlayerLife;
     }
-    this.playerHPText.setText("Your Ship\n" + this.playerLife);
+    this.playerHPText.setText("Your Ship\n" + this.playerHP);
   }
 
   obtainBattery(ship, battery) {
@@ -657,10 +724,10 @@ class SceneMain extends Phaser.Scene {
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
     rock.destroy();
-    this.makeRocks();
+    this.spawnAsteroids();
 
     if (!this.wearingShield) {
-      this.playerLife -= 1;
+      this.playerHP -= 1;
       this.downPlayer();
     }
   }
@@ -670,47 +737,8 @@ class SceneMain extends Phaser.Scene {
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
     rock.destroy();
-    this.makeRocks();
+    this.spawnAsteroids();
     this.downEnemy();
-  }
-
-  // The ship moves to where the mouse clicks
-  backgroundClicked() {
-    // Note: localX and localY are Phaser functions
-    this.targetX = this.background.input.localX * this.background.scaleX;
-    this.targetY = this.background.input.localY * this.background.scaleX;
-
-    // moveTo returns an angle. The sprite's "angle" property is where it faces
-    let angle = this.physics.moveTo(this.ship, this.targetX, this.targetY, 100);
-    angle = this.toDegrees(angle);
-    this.ship.angle = angle;
-
-    // Gets the ship's distance from the target click
-    let shipDistX = Math.abs(this.ship.x - this.targetX);
-    let shipDistY = Math.abs(this.ship.y - this.targetY);
-
-    // The ship will only chase you if you moved a distance > 30
-    if (shipDistX > 30 && shipDistY > 30) {
-      let speed = 50;
-
-      if (this.enemyLife < this.totalEL / 2) {
-        speed = 75;
-      }
-
-      if (this.enemyLife < this.totalEL / 4) {
-        speed = 99;
-      }
-
-      // Enemy ship movement
-      let enemyAngle = this.physics.moveTo(
-        this.eship,
-        this.ship.x,
-        this.ship.y,
-        speed
-      );
-      enemyAngle = this.toDegrees(enemyAngle);
-      this.eship.angle = enemyAngle;
-    }
   }
 
   getTimer() {
@@ -813,21 +841,23 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
-  // C
+  //
   fireBullet() {
-    const dirObj = this.getDirFromAngle(this.ship.angle);
+    const directionObject = this.getDirectionFromAngle(this.ship.angle);
     const projectileSpeed = 200;
 
     const bullet = this.physics.add.sprite(
-      this.ship.x + dirObj.tx * 30,
-      this.ship.y + dirObj.ty * 30,
+      this.ship.x + directionObject.tx * 30,
+      this.ship.y + directionObject.ty * 30,
       "bullet"
     );
     this.bulletGroup.add(bullet);
     bullet.angle = this.ship.angle;
+
+    // Set the velocity based on the direction object
     bullet.body.setVelocity(
-      dirObj.tx * projectileSpeed,
-      dirObj.ty * projectileSpeed
+      directionObject.tx * projectileSpeed,
+      directionObject.ty * projectileSpeed
     );
 
     emitter.emit(G.PLAY_SOUND, "laser");
@@ -857,11 +887,11 @@ class SceneMain extends Phaser.Scene {
   enemyShipChase() {
     let mothershipSpeed = 50;
 
-    if (this.enemyLife < this.totalEL / 2) {
+    if (this.enemyHP < this.totalEnemyLife / 2) {
       mothershipSpeed = 65;
     }
 
-    if (this.enemyLife < this.totalEL / 4) {
+    if (this.enemyHP < this.totalEnemyLife / 4) {
       mothershipSpeed = 80;
     }
 
@@ -877,7 +907,7 @@ class SceneMain extends Phaser.Scene {
   }
 
   // Get direction from angle
-  getDirFromAngle(angle) {
+  getDirectionFromAngle(angle) {
     const rads = (angle * Math.PI) / 180;
     const tx = Math.cos(rads);
     const ty = Math.sin(rads);
@@ -936,16 +966,16 @@ class SceneMain extends Phaser.Scene {
     let shipDistX = Math.abs(this.ship.x - this.eship.x);
     let shipDistY = Math.abs(this.ship.y - this.eship.y);
 
-    if (this.enemyLife < Math.floor(this.totalEL / 2)) {
+    if (this.enemyHP < Math.floor(this.totalEnemyLife / 2)) {
       range = 4;
     }
-    if (this.enemyLife < Math.floor(this.totalEL / 3)) {
+    if (this.enemyHP < Math.floor(this.totalEnemyLife / 3)) {
       range = 3;
     }
-    if (this.enemyLife < Math.floor(this.totalEL / 4)) {
+    if (this.enemyHP < Math.floor(this.totalEnemyLife / 4)) {
       range = 2;
     }
-    if (this.enemyLife < Math.floor(this.totalEL / 5)) {
+    if (this.enemyHP < Math.floor(this.totalEnemyLife / 5)) {
       range = 1;
     }
 
