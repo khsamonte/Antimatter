@@ -138,7 +138,7 @@ class SceneMain extends Phaser.Scene {
     // Groups allow similar objects to have uniform behaviour
     this.bulletGroup = this.physics.add.group({});
     this.eBulletGroup = this.physics.add.group({});
-    this.rockGroup = this.physics.add.group({});
+    this.asteroidGroup = this.physics.add.group({});
     this.starGroup = this.physics.add.group({});
     this.batteryGroup = this.physics.add.group({});
     this.shieldGroup = this.physics.add.group({});
@@ -188,11 +188,12 @@ class SceneMain extends Phaser.Scene {
     };
   }
 
+  // Spawn a star in space randomly (time interval set on stopwatch)
   spawnStar() {
-    // Add the sprite
     const position = this.randomiseInitialPos();
     const velocity = this.randomiseInitialVelocity(150);
 
+    // Add the sprite
     const star = this.physics.add.sprite(position.xx, position.yy, "star");
     Align.scaleToGameWidth(star, 0.05);
     this.starGroup.add(star);
@@ -206,59 +207,22 @@ class SceneMain extends Phaser.Scene {
     this.setStarColliders();
   }
 
-  // spawnStar() {
-  //   // Random coordinates
-  //   const xx = Math.floor(Math.random() * this.background.displayWidth);
-  //   const yy = Math.floor(Math.random() * this.background.displayHeight);
-
-  //   // Apply physics to the stars (-1, 0, 1)
-  //   let vx = Math.floor(Math.random() * 2) - 1;
-  //   let vy = Math.floor(Math.random() * 2) - 1;
-
-  //   // Avoid immobile spawning of star
-  //   vx = vx === 0 ? 1 : vx;
-  //   vy = vy === 0 ? 1 : vy;
-
-  //   // Somewhere between 10 and 150
-  //   const speed = Math.floor(Math.random() * 150 + 10);
-
-  //   // Add the sprite
-  //   const star = this.physics.add.sprite(xx, yy, "star");
-  //   Align.scaleToGameWidth(star, 0.05);
-  //   this.starGroup.add(star);
-
-  //   // Set the interaction collision of the star
-  //   star.body.setVelocity(vx * speed, vy * speed);
-  //   star.body.bounce.setTo(1, 1);
-  //   star.body.angularVelocity = 1;
-  //   star.body.collideWorldBounds = true;
-
-  //   this.setStarColliders();
-  // }
-
+  // Spawn a battery in space randomly (time interval set on stopwatch)
   spawnBattery() {
-    // Random coordinates
-    const xx = Math.floor(Math.random() * this.background.displayWidth);
-    const yy = Math.floor(Math.random() * this.background.displayHeight);
-
-    // Apply physics to the batteries (-1, 0, 1)
-    let vx = Math.floor(Math.random() * 2) - 1;
-    let vy = Math.floor(Math.random() * 2) - 1;
-
-    // Avoid immobile spawning of battery
-    vx = vx === 0 ? 1 : vx;
-    vy = vy === 0 ? 1 : vy;
-
-    // Somewhere between 10 and 50
-    const speed = Math.floor(Math.random() * 50 + 10);
+    const position = this.randomiseInitialPos();
+    const velocity = this.randomiseInitialVelocity(50);
 
     // Add the sprite
-    const battery = this.physics.add.sprite(xx, yy, "battery");
+    const battery = this.physics.add.sprite(
+      position.xx,
+      position.yy,
+      "battery"
+    );
     Align.scaleToGameWidth(battery, 0.03);
     this.batteryGroup.add(battery);
 
     // Set the interaction collision of the battery
-    battery.body.setVelocity(vx * speed, vy * speed);
+    battery.body.setVelocity(velocity.x, velocity.y);
     battery.body.bounce.setTo(1, 1);
     battery.body.angularVelocity = 1;
     battery.body.collideWorldBounds = true;
@@ -266,29 +230,18 @@ class SceneMain extends Phaser.Scene {
     this.setBatteryColliders();
   }
 
+  // Spawn a shield in space randomly (time interval set on stopwatch)
   spawnShield() {
-    // Random coordinates
-    const xx = Math.floor(Math.random() * this.background.displayWidth);
-    const yy = Math.floor(Math.random() * this.background.displayHeight);
-
-    // Apply physics to the batteries (-1, 0, 1)
-    let vx = Math.floor(Math.random() * 2) - 1;
-    let vy = Math.floor(Math.random() * 2) - 1;
-
-    // Avoid immobile spawning of battery
-    vx = vx === 0 ? 1 : vx;
-    vy = vy === 0 ? 1 : vy;
-
-    // Somewhere between 10 and 50
-    const speed = Math.floor(Math.random() * 50 + 10);
+    const position = this.randomiseInitialPos();
+    const velocity = this.randomiseInitialVelocity(50);
 
     // Add the sprite
-    const shield = this.physics.add.sprite(xx, yy, "shield");
+    const shield = this.physics.add.sprite(position.xx, position.yy, "shield");
     Align.scaleToGameWidth(shield, 0.1);
     this.shieldGroup.add(shield);
 
     // Set the interaction collision of the battery
-    shield.body.setVelocity(vx * speed, vy * speed);
+    shield.body.setVelocity(velocity.x, velocity.y);
     shield.body.bounce.setTo(1, 1);
     shield.body.angularVelocity = 1;
     shield.body.collideWorldBounds = true;
@@ -302,8 +255,8 @@ class SceneMain extends Phaser.Scene {
      * Add a bunch of sprites into the group
      * frameQuantity is the amount to be spawned per frame
      */
-    if (this.rockGroup.getChildren().length === 0) {
-      this.rockGroup = this.physics.add.group({
+    if (this.asteroidGroup.getChildren().length === 0) {
+      this.asteroidGroup = this.physics.add.group({
         key: "rocks",
         frame: [0, 1, 2],
         frameQuantity: 4,
@@ -314,7 +267,7 @@ class SceneMain extends Phaser.Scene {
       });
 
       // Randomise every group node's x and y in the whole background
-      this.rockGroup.children.iterate(
+      this.asteroidGroup.children.iterate(
         function(child) {
           // Randomise spawn of asteroids anywhere in the field
           const xx = Math.floor(Math.random() * this.background.displayWidth);
@@ -323,25 +276,21 @@ class SceneMain extends Phaser.Scene {
           child.y = yy;
           Align.scaleToGameWidth(child, 0.1);
 
-          // Apply physics to the asteroids (-1, 0, 1)
-          let vx = Math.floor(Math.random() * 2) - 1;
-          let vy = Math.floor(Math.random() * 2) - 1;
+          const velocity = this.randomiseInitialVelocity(200);
 
-          // Avoid immobile spawning of asteroid
-          if (vx === 0 && vy === 0) {
-            vx = 1;
-            vy = 1;
-          }
-
-          // Somewhere between 10 and 200
-          const speed = Math.floor(Math.random() * 200 + 10);
-          child.body.setVelocity(vx * speed, vy * speed);
+          child.body.setVelocity(velocity.x, velocity.y);
         }.bind(this)
       );
 
       this.setRockColliders();
     }
   }
+
+  /**
+   * ----------------
+   * Collision Methods
+   * ----------------
+   */
 
   setColliders() {
     // Bullets vs Ships
@@ -363,7 +312,7 @@ class SceneMain extends Phaser.Scene {
 
   setStarColliders() {
     this.physics.add.collider(this.starGroup);
-    this.physics.add.collider(this.starGroup, this.rockGroup);
+    this.physics.add.collider(this.starGroup, this.asteroidGroup);
 
     this.physics.add.collider(
       this.starGroup,
@@ -399,7 +348,7 @@ class SceneMain extends Phaser.Scene {
   setBatteryColliders() {
     this.physics.add.collider(this.batteryGroup);
     this.physics.add.collider(this.batteryGroup, this.eship);
-    this.physics.add.collider(this.batteryGroup, this.rockGroup);
+    this.physics.add.collider(this.batteryGroup, this.asteroidGroup);
     this.physics.add.collider(this.batteryGroup, this.starGroup);
 
     // Ship obtains battery
@@ -414,7 +363,7 @@ class SceneMain extends Phaser.Scene {
 
   setShieldColliders() {
     this.physics.add.collider(
-      this.rockGroup,
+      this.asteroidGroup,
       this.shield,
       this.destroyRockOnly,
       null,
@@ -432,7 +381,7 @@ class SceneMain extends Phaser.Scene {
 
   setShieldGroupColliders() {
     this.physics.add.collider(this.shieldGroup, this.eship);
-    this.physics.add.collider(this.shieldGroup, this.rockGroup);
+    this.physics.add.collider(this.shieldGroup, this.asteroidGroup);
     this.physics.add.collider(this.shieldGroup, this.starGroup);
     this.physics.add.collider(this.shieldGroup, this.batteryGroup);
 
@@ -448,17 +397,17 @@ class SceneMain extends Phaser.Scene {
 
   // Create colliders for rocks
   setRockColliders() {
-    this.physics.add.collider(this.rockGroup);
+    this.physics.add.collider(this.asteroidGroup);
 
     this.physics.add.collider(
-      this.rockGroup,
+      this.asteroidGroup,
       this.ship,
       this.rockHitPlayer,
       null,
       this
     );
     this.physics.add.collider(
-      this.rockGroup,
+      this.asteroidGroup,
       this.eship,
       this.rockHitEnemy,
       null,
@@ -467,14 +416,14 @@ class SceneMain extends Phaser.Scene {
 
     // Rocks + bullets
     this.physics.add.collider(
-      this.rockGroup,
+      this.asteroidGroup,
       this.bulletGroup,
       this.destroyRock,
       null,
       this
     );
     this.physics.add.collider(
-      this.rockGroup,
+      this.asteroidGroup,
       this.eBulletGroup,
       this.destroyRock,
       null,
