@@ -149,6 +149,9 @@ class SceneMain extends Phaser.Scene {
     this.spawnAsteroids();
     this.setColliders();
 
+    // this.bomb = this.physics.add.sprite(this.ship.x, this.ship.y, "bomb");
+    // Align.scaleToGameWidth(this.bomb, 0.07);
+
     // TODO: Sound Buttons for mobile
     // const sb = new SoundButtons({ scene: this });
   }
@@ -608,7 +611,7 @@ class SceneMain extends Phaser.Scene {
     this.seconds += 1;
 
     // Spawns a star every 20 seconds
-    if (this.seconds % 5 === 0) {
+    if (this.seconds % 20 === 0) {
       this.spawnStar();
     }
 

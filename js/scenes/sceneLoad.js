@@ -77,6 +77,7 @@ class SceneLoad extends Phaser.Scene {
     this.load.image("ebullet", "./images/ebullet.png");
     this.load.image("battery", "./images/battery.png");
     this.load.image("shield", "./images/shield.png");
+    this.load.image("bomb", "./images/bomb.svg");
 
     // Loads the animating sprites
     this.load.spritesheet("exp", "./images/exp.png", {
