@@ -68,6 +68,7 @@ class SceneMain extends Phaser.Scene {
     this.ship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.ship, 0.125);
 
+    this.spawnBlackHole();
     // Add the enemy ship to the top centre of the screen
     this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
     this.eship.body.collideWorldBounds = true;
@@ -153,7 +154,6 @@ class SceneMain extends Phaser.Scene {
     this.spawnStar();
     this.spawnBattery();
     this.spawnShield();
-    this.spawnBlackHole();
 
     // this.bomb = this.physics.add.sprite(this.ship.x, this.ship.y, "bomb");
     // Align.scaleToGameWidth(this.bomb, 0.07);
@@ -965,19 +965,10 @@ class SceneMain extends Phaser.Scene {
       this
     );
 
-    // Annihilate shields
+    // Annihilate bullets
     this.physics.overlap(
       this.blackHole,
       this.bulletGroup,
-      this.annihilateObject,
-      null,
-      this
-    );
-
-    // Annihilate shields
-    this.physics.overlap(
-      this.blackHole,
-      this.eBulletGroup,
       this.annihilateObject,
       null,
       this
@@ -1061,7 +1052,7 @@ class SceneMain extends Phaser.Scene {
     if (blackHoleDistX < 50 && blackHoleDistY < 50) {
       this.shipVelocity = 40;
       this.shipVelocityDiag = 30;
-    } else {
+    } else if (!this.stillBoosting) {
       this.shipVelocity = 100;
       this.shipVelocityDiag = 80;
     }
