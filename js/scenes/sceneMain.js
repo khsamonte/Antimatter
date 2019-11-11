@@ -149,6 +149,12 @@ class SceneMain extends Phaser.Scene {
     this.spawnAsteroids();
     this.setColliders();
 
+    // Spawn all items for now
+    this.spawnStar();
+    this.spawnBattery();
+    this.spawnShield();
+    this.spawnBlackHole();
+
     // this.bomb = this.physics.add.sprite(this.ship.x, this.ship.y, "bomb");
     // Align.scaleToGameWidth(this.bomb, 0.07);
 
@@ -246,10 +252,26 @@ class SceneMain extends Phaser.Scene {
     // Set the interaction collision of the battery
     shield.body.setVelocity(velocity.x, velocity.y);
     shield.body.bounce.setTo(1, 1);
-    shield.body.angularVelocity = 1;
+    shield.body.angularVelocity = 0.5;
     shield.body.collideWorldBounds = true;
 
     this.setShieldGroupColliders();
+  }
+
+  spawnBlackHole() {
+    const velocity = this.randomiseInitialVelocity(10);
+
+    this.blackHole = this.physics.add.sprite(
+      game.config.width / 3,
+      game.config.height / 3,
+      "blackhole"
+    );
+    Align.scaleToGameWidth(this.blackHole, 0.3);
+
+    this.blackHole.body.setVelocity(velocity.x, velocity.y);
+    this.blackHole.body.bounce.setTo(1, 1);
+    this.blackHole.body.angularVelocity = 1;
+    this.blackHole.body.collideWorldBounds = true;
   }
 
   // Generate 12 asteroids if all asteroids have exploded
@@ -396,6 +418,33 @@ class SceneMain extends Phaser.Scene {
       null,
       this
     );
+  }
+
+  annihilateObject(blackHole, object) {
+    let objectAngle = this.physics.moveTo(
+      object,
+      blackHole.x,
+      blackHole.y,
+      150
+    );
+    objectAngle = this.toDegrees(objectAngle);
+    object.angle = objectAngle;
+    object.alpha -= 0.05;
+
+    if (object.alpha === 0) {
+      object.destroy();
+    }
+  }
+
+  accelerateToObject(moving, pulling, speed) {
+    if (typeof speed === "undefined") {
+      speed = 60;
+    }
+
+    let angle = Math.atan2(pulling.y - moving.y, pulling.x - moving.x);
+    moving.body.rotation = angle + game.math.degToRad(90);
+    moving.body.force.x = Math.cos(angle) * speed;
+    moving.body.force.y = Math.sin(angle) * speed;
   }
 
   // Create colliders for rocks
@@ -848,15 +897,12 @@ class SceneMain extends Phaser.Scene {
 
   enemyShipChase() {
     let mothershipSpeed = 50;
-
     if (this.enemyHP < this.totalEnemyLife / 2) {
       mothershipSpeed = 65;
     }
-
     if (this.enemyHP < this.totalEnemyLife / 4) {
       mothershipSpeed = 80;
     }
-
     // Enemy ship movement
     let enemyAngle = this.physics.moveTo(
       this.eship,
@@ -882,6 +928,62 @@ class SceneMain extends Phaser.Scene {
     return angle * (180 / Math.PI);
   }
 
+  annihilate() {
+    // Annihilate asteroids
+    this.physics.overlap(
+      this.blackHole,
+      this.asteroidGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate stars
+    this.physics.overlap(
+      this.blackHole,
+      this.starGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate batteries
+    this.physics.overlap(
+      this.blackHole,
+      this.batteryGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate shields
+    this.physics.overlap(
+      this.blackHole,
+      this.shieldGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate shields
+    this.physics.overlap(
+      this.blackHole,
+      this.bulletGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate shields
+    this.physics.overlap(
+      this.blackHole,
+      this.eBulletGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+  }
+
   update() {
     this.stopwatch();
     this.ship.setVelocityX(0);
@@ -895,6 +997,7 @@ class SceneMain extends Phaser.Scene {
     // Controls
     const cursors = this.input.keyboard.createCursorKeys();
 
+    // Horizontal & Vertical Controls
     if (cursors.left.isDown) {
       this.moveLeft();
     } else if (cursors.up.isDown) {
@@ -905,6 +1008,7 @@ class SceneMain extends Phaser.Scene {
       this.moveRight();
     }
 
+    // Diagonal Controls
     if (cursors.left.isDown && cursors.up.isDown) {
       this.shiftNorthWest();
     } else if (cursors.right.isDown && cursors.up.isDown) {
@@ -915,19 +1019,17 @@ class SceneMain extends Phaser.Scene {
       this.shiftSouthWest();
     }
 
-    // Detect proximity between _____
+    // NO LONGER USED: The ship will not move if the click is too close
     let distanceX = Math.abs(this.ship.x - this.targetX);
     let distanceY = Math.abs(this.ship.y - this.targetY);
     let range = 5;
-
     if (distanceX < 10 && distanceY < 10) {
       this.ship.body.setVelocity(0, 0);
     }
 
-    // Detect proximity between ship and eship
+    // Detect proximity between ship and eship; fires bullets if close
     let shipDistX = Math.abs(this.ship.x - this.eship.x);
     let shipDistY = Math.abs(this.ship.y - this.eship.y);
-
     if (this.enemyHP < Math.floor(this.totalEnemyLife / 2)) {
       range = 4;
     }
@@ -940,14 +1042,30 @@ class SceneMain extends Phaser.Scene {
     if (this.enemyHP < Math.floor(this.totalEnemyLife / 5)) {
       range = 1;
     }
-
-    // Fire bullet if ship gets close
-    // this.fireEnemyBullet();
     if (
       shipDistX < game.config.width / range &&
       shipDistY < game.config.height / range
     ) {
       this.fireEnemyBullet();
     }
+
+    // Spinning black hole
+    if (this.blackHole.angle === 360) {
+      this.blackHole.angle = 1;
+    } else {
+      this.blackHole.angle += 2;
+    }
+
+    let blackHoleDistX = Math.abs(this.ship.x - this.blackHole.x);
+    let blackHoleDistY = Math.abs(this.ship.y - this.blackHole.y);
+    if (blackHoleDistX < 50 && blackHoleDistY < 50) {
+      this.shipVelocity = 40;
+      this.shipVelocityDiag = 30;
+    } else {
+      this.shipVelocity = 100;
+      this.shipVelocityDiag = 80;
+    }
+
+    this.annihilate();
   }
 }
