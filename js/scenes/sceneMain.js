@@ -655,8 +655,8 @@ class SceneMain extends Phaser.Scene {
     if (!this.wearingShield) {
       this.playerHP -= 2;
       this.downPlayer();
-      meteor.destroy();
     }
+    meteor.destroy();
   }
 
   damageEnemy(ship, bullet) {
