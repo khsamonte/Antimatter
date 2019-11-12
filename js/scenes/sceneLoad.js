@@ -70,6 +70,7 @@ class SceneLoad extends Phaser.Scene {
       frameWidth: 125,
       frameHeight: 100
     });
+    this.load.image("meteor", "./images/meteorite.png");
     this.load.image("star", "./images/star.png");
 
     // Loads the technology objects

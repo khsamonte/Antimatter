@@ -63,12 +63,13 @@ class SceneMain extends Phaser.Scene {
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
+    this.spawnBlackHole();
+
     // Add the player ship to the centre of the screen
     this.ship = this.physics.add.sprite(this.centerX, this.centerY, "ship");
     this.ship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.ship, 0.125);
 
-    this.spawnBlackHole();
     // Add the enemy ship to the top centre of the screen
     this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
     this.eship.body.collideWorldBounds = true;
@@ -139,7 +140,10 @@ class SceneMain extends Phaser.Scene {
     // Groups allow similar objects to have uniform behaviour
     this.bulletGroup = this.physics.add.group({});
     this.eBulletGroup = this.physics.add.group({});
+
     this.asteroidGroup = this.physics.add.group({});
+    this.meteorGroup = this.physics.add.group({});
+
     this.starGroup = this.physics.add.group({});
     this.batteryGroup = this.physics.add.group({});
     this.shieldGroup = this.physics.add.group({});
@@ -148,6 +152,7 @@ class SceneMain extends Phaser.Scene {
     this.makeInfo();
     this.batteriesInfo();
     this.spawnAsteroids();
+    this.meteorShower();
     this.setColliders();
 
     // Spawn all items for now
@@ -259,14 +264,15 @@ class SceneMain extends Phaser.Scene {
   }
 
   spawnBlackHole() {
+    const position = this.randomiseInitialPos();
     const velocity = this.randomiseInitialVelocity(10);
 
     this.blackHole = this.physics.add.sprite(
-      game.config.width / 3,
-      game.config.height / 3,
+      position.xx,
+      position.yy,
       "blackhole"
     );
-    Align.scaleToGameWidth(this.blackHole, 0.3);
+    Align.scaleToGameWidth(this.blackHole, 0.5);
 
     this.blackHole.body.setVelocity(velocity.x, velocity.y);
     this.blackHole.body.bounce.setTo(1, 1);
@@ -309,6 +315,41 @@ class SceneMain extends Phaser.Scene {
 
       this.setRockColliders();
     }
+  }
+
+  // Generate 10 meteors
+  meteorShower() {
+    // Callback
+    for (let i = 0; i < 50; i++) {
+      this.time.delayedCall(i * 200, this.spawnMeteor, [], this);
+    }
+  }
+
+  spawnMeteor() {
+    // Add the sprite
+    const xx = Math.floor(this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    const meteor = this.physics.add.sprite(xx, yy, "meteor");
+    Align.scaleToGameWidth(meteor, 0.125);
+    this.meteorGroup.add(meteor);
+
+    // Set the interaction collision of the battery
+    meteor.body.setVelocity(-300, Math.random() * 100);
+    meteor.body.bounce.setTo(1, 1);
+    meteor.body.angularVelocity = 1;
+    meteor.angle = 35;
+    meteor.alpha = 0.8;
+    meteor.body.collideWorldBounds = false;
+
+    this.physics.add.collider(this.meteorGroup);
+    this.physics.add.collider(
+      this.meteorGroup,
+      this.ship,
+      this.shipHitByMeteor,
+      null,
+      this
+    );
   }
 
   /**
@@ -436,15 +477,8 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
-  accelerateToObject(moving, pulling, speed) {
-    if (typeof speed === "undefined") {
-      speed = 60;
-    }
-
-    let angle = Math.atan2(pulling.y - moving.y, pulling.x - moving.x);
-    moving.body.rotation = angle + game.math.degToRad(90);
-    moving.body.force.x = Math.cos(angle) * speed;
-    moving.body.force.y = Math.sin(angle) * speed;
+  superSlowShip(blackHole, ship) {
+    console.log(blackHole.x - ship.x);
   }
 
   // Create colliders for rocks
@@ -613,6 +647,18 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
+  shipHitByMeteor(ship, meteor) {
+    const explosion = this.add.sprite(meteor.x, meteor.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+
+    if (!this.wearingShield) {
+      this.playerHP -= 2;
+      this.downPlayer();
+      meteor.destroy();
+    }
+  }
+
   damageEnemy(ship, bullet) {
     const explosion = this.add.sprite(bullet.x, bullet.y, "exp");
     explosion.play("boom");
@@ -675,6 +721,7 @@ class SceneMain extends Phaser.Scene {
     }
 
     if (this.seconds === 60) {
+      this.meteorShower();
       this.seconds = 0;
       this.minutes += 1;
     }
@@ -928,6 +975,17 @@ class SceneMain extends Phaser.Scene {
     return angle * (180 / Math.PI);
   }
 
+  superSlow() {
+    // Annihilate asteroids
+    this.physics.overlap(
+      this.blackHole,
+      this.ship,
+      this.superSlowShip,
+      null,
+      this
+    );
+  }
+
   annihilate() {
     // Annihilate asteroids
     this.physics.overlap(
@@ -1047,6 +1105,10 @@ class SceneMain extends Phaser.Scene {
       this.blackHole.angle += 2;
     }
 
+    // Slowly grow the black hole
+    // this.blackHole.scaleX += 0.0001;
+    // this.blackHole.scaleY += 0.0001;
+
     let blackHoleDistX = Math.abs(this.ship.x - this.blackHole.x);
     let blackHoleDistY = Math.abs(this.ship.y - this.blackHole.y);
     if (blackHoleDistX < 50 && blackHoleDistY < 50) {
@@ -1057,6 +1119,8 @@ class SceneMain extends Phaser.Scene {
       this.shipVelocityDiag = 80;
     }
 
+    // Any object that overlaps with the black hole will be annihilated
     this.annihilate();
+    // this.superSlow();
   }
 }
