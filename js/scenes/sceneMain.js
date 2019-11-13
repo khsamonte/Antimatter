@@ -13,163 +13,51 @@ class SceneMain extends Phaser.Scene {
   }
 
   create() {
-    // Setup
+    /**
+     * ----------------
+     * Setting up events and media
+     * ----------------
+     */
     emitter = new Phaser.Events.EventEmitter();
     controller = new Controller();
     const mediaManager = new MediaManager({ scene: this });
 
-    // Game Condition (Win / Lose)
+    // The state of the game
     model.playerWon = true;
-
-    /**
-     * ----------------
-     * Game Stats
-     * ----------------
-     */
-
-    // Initialise stopwatch components
-    this.seconds = 0;
-    this.minutes = 0;
-
-    // Initialise HP
-    this.totalPlayerLife = 70;
-    this.totalEnemyLife = 120;
-
-    this.playerHP = this.totalPlayerLife;
-    this.enemyHP = 120;
-
-    // Default ship velocity (diagonal)
-    this.shipVelocity = 100;
-    this.shipVelocityDiag = 80;
-
-    // Player Batteries
-    this.batteries = 0;
-    this.stillBoosting = false;
-
-    // Shield
-    this.wearingShield = false;
-
-    // Enemy Status
-    this.mShipAttacks = 0;
-    this.mShipIsCharging = false;
-    this.mShipIsSpinning = false;
 
     // Centre of the screen
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
 
-    /**
-     * ----------------
-     * Add images, sprites, and animations
-     * ----------------
-     */
+    // Initialise time components
+    this.seconds = 0;
+    this.minutes = 0;
 
     // Add background image
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
-    this.spawnBlackHole();
-
-    // Add the player ship to the centre of the screen
-    this.ship = this.physics.add.sprite(this.centerX, this.centerY, "ship");
-    this.ship.body.collideWorldBounds = true;
-    Align.scaleToGameWidth(this.ship, 0.125);
-
-    // Add the enemy ship to the top centre of the screen
-    this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
-    this.eship.body.immovable = true;
-    this.eship.body.collideWorldBounds = true;
-    Align.scaleToGameWidth(this.eship, 0.25);
+    // Adds the first space objects
+    this.createBlackHole();
+    this.createShip();
+    this.createMothership();
 
     // Scale background relative to the scaling of the ship
     this.background.scaleX = this.ship.scaleX;
     this.background.scaleY = this.ship.scaleY;
 
-    // Explosion frames and animation (small to big)
-    const expFrames = this.anims.generateFrameNumbers("exp");
-    const expFrames2 = expFrames.slice();
-    expFrames2.reverse();
-    const expFrames3 = expFrames2.concat(expFrames);
+    // Add the animations
+    this.createExplosionAnimation();
 
-    // Create the explosion animation
-    this.anims.create({
-      key: "boom",
-      frames: expFrames3,
-      frameRate: 48,
-      repeat: false
-    });
-
-    /**
-     * ----------------
-     * Keyboard Events
-     * ----------------
-     */
-
-    // Use turbo by pressing "Z"
-    this.boostKey = this.input.keyboard.addKey("Z");
-    this.boostKey.on("down", this.boostShip, this);
-
-    // Fire lasers by pressing "C"
-    this.fireKey = this.input.keyboard.addKey("C");
-    this.fireKey.on("down", this.fireBullet, this);
-
-    /**
-     * ----------------
-     * Initialising the world and camera
-     * ----------------
-     */
-
-    /**
-     * Set the boundaries of the world as the
-     * total w and h of the background image.
-     */
-    this.physics.world.setBounds(
-      0,
-      0,
-      this.background.displayWidth,
-      this.background.displayHeight
-    );
-
-    /**
-     * Scrolling Background Effect:
-     * Set the bounds for camera according to the background image
-     * Then have the camera follow the ship
-     */
-    this.cameras.main.setBounds(
-      0,
-      0,
-      this.background.displayWidth,
-      this.background.displayHeight
-    );
-    this.cameras.main.startFollow(this.ship, true);
-
-    // Groups allow similar objects to have uniform behaviour
-    this.bulletGroup = this.physics.add.group({});
-    this.eBulletGroup = this.physics.add.group({});
-
-    this.asteroidGroup = this.physics.add.group({});
-    this.meteorGroup = this.physics.add.group({});
-
-    this.starGroup = this.physics.add.group({});
-    this.batteryGroup = this.physics.add.group({});
-    this.shieldGroup = this.physics.add.group({});
+    // Setting up the game itself
+    this.setKeyboardEvents();
+    this.setWorldBoundaries();
+    this.initialiseGroups();
 
     // Generate the information panels then set asteroids and colliders
     this.makeInfo();
     this.batteriesInfo();
-    this.spawnAsteroids();
-    this.meteorShower();
-    this.setColliders();
-
-    // Spawn all items for now
-    this.spawnStar();
-    this.spawnBattery();
-    this.spawnShield();
-
-    // this.spawnComet();
-
-    // this.bomb = this.physics.add.sprite(this.ship.x, this.ship.y, "bomb");
-    // Align.scaleToGameWidth(this.bomb, 0.07);
+    this.spawnInitialGameObjects();
 
     // TODO: Sound Buttons for mobile
     // const sb = new SoundButtons({ scene: this });
@@ -177,7 +65,65 @@ class SceneMain extends Phaser.Scene {
 
   /**
    * ----------------
-   * Generating Objects Methods
+   * Setting up the game
+   * ----------------
+   */
+
+  // Set up the world and camera
+  setWorldBoundaries() {
+    const totalWidth = this.background.displayWidth;
+    const totalHeight = this.background.displayHeight;
+
+    // Set the boundaries as the w and h of the background image
+    this.physics.world.setBounds(0, 0, totalWidth, totalHeight);
+    this.cameras.main.setBounds(0, 0, totalWidth, totalHeight);
+    this.cameras.main.startFollow(this.ship, true);
+  }
+
+  // Set up the controls
+  setKeyboardEvents() {
+    // Use turbo by pressing "Z"
+    this.boostKey = this.input.keyboard.addKey("Z");
+    this.boostKey.on("down", this.boostShip, this);
+
+    // Fire lasers by pressing "C"
+    this.fireKey = this.input.keyboard.addKey("C");
+    this.fireKey.on("down", this.fireBullet, this);
+  }
+
+  // Groups allow similar objects to have uniform behaviour
+  initialiseGroups() {
+    // Weapons
+    this.bulletGroup = this.physics.add.group({});
+    this.eBulletGroup = this.physics.add.group({});
+
+    // Items
+    this.starGroup = this.physics.add.group({});
+    this.batteryGroup = this.physics.add.group({});
+    this.shieldGroup = this.physics.add.group({});
+
+    // Space Objects
+    this.asteroidGroup = this.physics.add.group({});
+    this.meteorGroup = this.physics.add.group({});
+  }
+
+  spawnInitialGameObjects() {
+    // Space Objects
+    this.spawnAsteroids();
+    this.meteorShower();
+
+    // Items
+    this.spawnStar();
+    this.spawnBattery();
+    this.spawnShield();
+
+    // Collisions
+    this.setColliders();
+  }
+
+  /**
+   * ----------------
+   * Randomisers
    * ----------------
    */
 
@@ -209,6 +155,93 @@ class SceneMain extends Phaser.Scene {
       y: vy * speed
     };
   }
+
+  /**
+   * ----------------
+   * Creating the first objects and animations
+   * ----------------
+   */
+
+  // The creation of the ship and all its attributes
+  createShip() {
+    this.ship = this.physics.add.sprite(this.centerX, this.centerY, "ship");
+    this.ship.body.collideWorldBounds = true;
+    Align.scaleToGameWidth(this.ship, 0.125);
+
+    // HP
+    this.totalPlayerLife = 70;
+    this.playerHP = this.totalPlayerLife;
+
+    // Items & Status
+    this.batteries = 0;
+    this.stillBoosting = false;
+    this.wearingShield = false;
+
+    // Default ship movement velocity
+    this.shipVelocity = 100;
+    this.shipVelocityDiag = 80;
+  }
+
+  // The creation of the Mothership and all its attributes
+  createMothership() {
+    this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
+    this.eship.body.immovable = true;
+    this.eship.body.collideWorldBounds = true;
+    Align.scaleToGameWidth(this.eship, 0.25);
+
+    // HP
+    this.totalEnemyLife = 120;
+    this.enemyHP = this.totalEnemyLife;
+
+    // Items & Status
+    this.mShipAttacks = 0;
+    this.mShipIsCharging = false;
+    this.mShipIsSpinning = false;
+    this.mShipIsLunging = false;
+  }
+
+  // This black hole very slowly move around the map
+  createBlackHole() {
+    // Randomise initial position and velocity
+    const position = this.randomiseInitialPos();
+    const velocity = this.randomiseInitialVelocity(10);
+
+    // Create the black hole
+    this.blackHole = this.physics.add.sprite(
+      position.xx,
+      position.yy,
+      "blackhole"
+    );
+    Align.scaleToGameWidth(this.blackHole, 0.7);
+
+    this.blackHole.body.setVelocity(velocity.x, velocity.y);
+    this.blackHole.body.bounce.setTo(1, 1);
+    this.blackHole.body.angularVelocity = 1;
+    this.blackHole.body.collideWorldBounds = true;
+  }
+
+  // Animation sprite for explosions
+  createExplosionAnimation() {
+    // Explosion frames and animation (small to big)
+    const expFrames = this.anims.generateFrameNumbers("exp");
+    const expFrames2 = expFrames.slice();
+    expFrames2.reverse();
+    const expFrames3 = expFrames2.concat(expFrames);
+
+    // Create the explosion animation
+    this.anims.create({
+      key: "boom",
+      frames: expFrames3,
+      frameRate: 48,
+      repeat: false
+    });
+  }
+
+  /**
+   * ----------------
+   * Generating Objects Methods
+   * ----------------
+   */
 
   // Spawn a star in space randomly (time interval set on stopwatch)
   spawnStar() {
@@ -269,23 +302,6 @@ class SceneMain extends Phaser.Scene {
     shield.body.collideWorldBounds = true;
 
     this.setShieldGroupColliders();
-  }
-
-  spawnBlackHole() {
-    const position = this.randomiseInitialPos();
-    const velocity = this.randomiseInitialVelocity(10);
-
-    this.blackHole = this.physics.add.sprite(
-      position.xx,
-      position.yy,
-      "blackhole"
-    );
-    Align.scaleToGameWidth(this.blackHole, 0.7);
-
-    this.blackHole.body.setVelocity(velocity.x, velocity.y);
-    this.blackHole.body.bounce.setTo(1, 1);
-    this.blackHole.body.angularVelocity = 1;
-    this.blackHole.body.collideWorldBounds = true;
   }
 
   // Generate 12 asteroids if all asteroids have exploded
