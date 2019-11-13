@@ -41,15 +41,35 @@ class SceneLoad extends Phaser.Scene {
       "./audio/red-armor.ogg"
     ]);
     this.load.audio("explode", ["./audio/explode.wav", "./audio/explode.ogg"]);
-    this.load.audio("enemyShoot", [
-      "./audio/enemyShoot.wav",
-      "./audio/enemyShoot.ogg"
-    ]);
+
+    // Player Ship
     this.load.audio("laser", ["./audio/laser.wav", "./audio/laser.ogg"]);
     this.load.audio("starSound", [
       "./audio/collectStar.wav",
       "./audio/collectStar.ogg"
     ]);
+    this.load.audio("battery", [
+      "./audio/collectBattery.wav",
+      "./audio/collectBattery.ogg"
+    ]);
+    this.load.audio("shield", [
+      "./audio/collectShield.wav",
+      "./audio/collectShield.ogg"
+    ]);
+    this.load.audio("turbo", ["./audio/turbo.wav", "./audio/turbo.ogg"]);
+
+    // Mother Ship
+    this.load.audio("enemyShoot", [
+      "./audio/enemyShoot.wav",
+      "./audio/enemyShoot.ogg"
+    ]);
+    this.load.audio("charging", [
+      "./audio/charging.mp3",
+      "./audio/charging.ogg"
+    ]);
+
+    // Space
+    this.load.audio("meteor", ["./audio/meteor.wav", "./audio/meteor.ogg"]);
 
     // Loads the UI of the game
     this.load.image("title", "./images/title.png");
@@ -70,7 +90,9 @@ class SceneLoad extends Phaser.Scene {
       frameWidth: 125,
       frameHeight: 100
     });
-    this.load.image("meteor", "./images/meteorite.png");
+    this.load.image("meteor", "./images/meteor.png");
+    this.load.image("meteorite", "./images/meteorite.png");
+    this.load.image("comet", "./images/comet.png");
     this.load.image("star", "./images/star.png");
 
     // Loads the technology objects
