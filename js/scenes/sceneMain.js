@@ -52,7 +52,7 @@ class SceneMain extends Phaser.Scene {
     // Setting up the game itself
     this.setKeyboardEvents();
     this.setWorldBoundaries();
-    this.initialiseGroups();
+    this.setGroups();
 
     // Generate the information panels then set asteroids and colliders
     this.makeInfo();
@@ -92,7 +92,7 @@ class SceneMain extends Phaser.Scene {
   }
 
   // Groups allow similar objects to have uniform behaviour
-  initialiseGroups() {
+  setGroups() {
     // Weapons
     this.bulletGroup = this.physics.add.group({});
     this.eBulletGroup = this.physics.add.group({});
@@ -123,7 +123,7 @@ class SceneMain extends Phaser.Scene {
 
   /**
    * ----------------
-   * Randomisers
+   * Randomiser utilities
    * ----------------
    */
 
@@ -341,14 +341,6 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
-  // Generate 10 meteors
-  meteorShower() {
-    // Callback
-    for (let i = 0; i < 35; i++) {
-      this.time.delayedCall(i * 400, this.spawnMeteor, [], this);
-    }
-  }
-
   spawnComet() {
     // Add the sprite
     const xx = Math.floor(this.background.displayWidth);
@@ -361,30 +353,40 @@ class SceneMain extends Phaser.Scene {
     comet.body.setVelocity(-150, Math.random() * 100);
   }
 
+  // Generate a succession of 35 meteors with .4s arrival difference
+  meteorShower() {
+    // Callback
+    for (let i = 0; i < 35; i++) {
+      this.time.delayedCall(i * 400, this.spawnMeteor, [], this);
+    }
+  }
+
+  // Create one meteor
   spawnMeteor() {
-    // Add the sprite
+    // All meteors will arrive from the right, going to the left
     const xx = Math.floor(this.background.displayWidth);
     const yy = Math.floor(Math.random() * this.background.displayHeight);
 
+    // Add the sprite
     const meteor = this.physics.add.sprite(xx, yy, "meteor");
     Align.scaleToGameWidth(meteor, 0.2);
     this.meteorGroup.add(meteor);
 
-    // Set the interaction collision of the battery
+    // Set the interaction collision of the meteor
     meteor.body.setVelocity(-230, Math.random() * 100);
+    meteor.angle = 135;
     meteor.body.bounce.setTo(1, 1);
     meteor.body.angularVelocity = 1;
-    meteor.angle = 135;
     meteor.body.collideWorldBounds = false;
 
+    // Sounds and collisions
     emitter.emit(G.PLAY_METEOR_SOUND, "meteor");
-
     this.setMeteorColliders();
   }
 
   /**
    * ----------------
-   * Collision Methods
+   * Collisions
    * ----------------
    */
 
@@ -461,7 +463,7 @@ class SceneMain extends Phaser.Scene {
     this.physics.add.collider(
       this.asteroidGroup,
       this.shield,
-      this.destroyRockOnly,
+      this.destroyObject,
       null,
       this
     );
@@ -469,7 +471,7 @@ class SceneMain extends Phaser.Scene {
     this.physics.add.collider(
       this.shield,
       this.eBulletGroup,
-      this.destroyEBullet,
+      this.destroyObject,
       null,
       this
     );
@@ -552,14 +554,14 @@ class SceneMain extends Phaser.Scene {
     this.physics.add.collider(
       this.asteroidGroup,
       this.bulletGroup,
-      this.destroyRock,
+      this.destroyAsteroidAndBullet,
       null,
       this
     );
     this.physics.add.collider(
       this.asteroidGroup,
       this.eBulletGroup,
-      this.destroyRock,
+      this.destroyAsteroidAndBullet,
       null,
       this
     );
@@ -627,6 +629,7 @@ class SceneMain extends Phaser.Scene {
     this.mothershipIcon.setScrollFactor(0);
   }
 
+  // Display the battery information
   batteriesInfo() {
     if (this.batteryIcon) {
       this.batteryIcon.destroy();
@@ -662,10 +665,11 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
-  destroyRock(bullet, rock) {
+  // Both the asteroid and bullet will explode upon contact of each other
+  destroyAsteroidAndBullet(bullet, rock) {
     bullet.destroy();
 
-    // Add the sprite image then play the animation
+    // Asteroid will explode
     const explosion = this.add.sprite(rock.x, rock.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
@@ -674,29 +678,12 @@ class SceneMain extends Phaser.Scene {
     this.spawnAsteroids();
   }
 
-  destroyObject(eship, object) {
+  // Make the object explode (used in meteors)
+  destroyObject(objectItCollidedWith, object) {
     object.destroy();
 
     // Add the sprite image then play the animation
     const explosion = this.add.sprite(object.x, object.y, "exp");
-    explosion.play("boom");
-    emitter.emit(G.PLAY_SOUND, "explode");
-  }
-
-  destroyRockOnly(object, rock) {
-    rock.destroy();
-
-    // Add the sprite image then play the animation
-    const explosion = this.add.sprite(rock.x, rock.y, "exp");
-    explosion.play("boom");
-    emitter.emit(G.PLAY_SOUND, "explode");
-  }
-
-  destroyEBullet(shield, eBullet) {
-    eBullet.destroy();
-
-    // Add the sprite image then play the animation
-    const explosion = this.add.sprite(eBullet.x, eBullet.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
   }
