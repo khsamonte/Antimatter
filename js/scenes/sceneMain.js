@@ -49,6 +49,11 @@ class SceneMain extends Phaser.Scene {
     // Shield
     this.wearingShield = false;
 
+    // Enemy Status
+    this.mShipAttacks = 0;
+    this.mShipIsCharging = false;
+    this.mShipIsSpinning = false;
+
     // Centre of the screen
     this.centerX = game.config.width / 2;
     this.centerY = game.config.height / 2;
@@ -63,6 +68,8 @@ class SceneMain extends Phaser.Scene {
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
+    this.spawnBlackHole();
+
     // Add the player ship to the centre of the screen
     this.ship = this.physics.add.sprite(this.centerX, this.centerY, "ship");
     this.ship.body.collideWorldBounds = true;
@@ -70,6 +77,7 @@ class SceneMain extends Phaser.Scene {
 
     // Add the enemy ship to the top centre of the screen
     this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
+    this.eship.body.immovable = true;
     this.eship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.eship, 0.25);
 
@@ -138,7 +146,10 @@ class SceneMain extends Phaser.Scene {
     // Groups allow similar objects to have uniform behaviour
     this.bulletGroup = this.physics.add.group({});
     this.eBulletGroup = this.physics.add.group({});
+
     this.asteroidGroup = this.physics.add.group({});
+    this.meteorGroup = this.physics.add.group({});
+
     this.starGroup = this.physics.add.group({});
     this.batteryGroup = this.physics.add.group({});
     this.shieldGroup = this.physics.add.group({});
@@ -147,7 +158,18 @@ class SceneMain extends Phaser.Scene {
     this.makeInfo();
     this.batteriesInfo();
     this.spawnAsteroids();
+    this.meteorShower();
     this.setColliders();
+
+    // Spawn all items for now
+    this.spawnStar();
+    this.spawnBattery();
+    this.spawnShield();
+
+    // this.spawnComet();
+
+    // this.bomb = this.physics.add.sprite(this.ship.x, this.ship.y, "bomb");
+    // Align.scaleToGameWidth(this.bomb, 0.07);
 
     // TODO: Sound Buttons for mobile
     // const sb = new SoundButtons({ scene: this });
@@ -243,10 +265,27 @@ class SceneMain extends Phaser.Scene {
     // Set the interaction collision of the battery
     shield.body.setVelocity(velocity.x, velocity.y);
     shield.body.bounce.setTo(1, 1);
-    shield.body.angularVelocity = 1;
+    shield.body.angularVelocity = 0.5;
     shield.body.collideWorldBounds = true;
 
     this.setShieldGroupColliders();
+  }
+
+  spawnBlackHole() {
+    const position = this.randomiseInitialPos();
+    const velocity = this.randomiseInitialVelocity(10);
+
+    this.blackHole = this.physics.add.sprite(
+      position.xx,
+      position.yy,
+      "blackhole"
+    );
+    Align.scaleToGameWidth(this.blackHole, 0.7);
+
+    this.blackHole.body.setVelocity(velocity.x, velocity.y);
+    this.blackHole.body.bounce.setTo(1, 1);
+    this.blackHole.body.angularVelocity = 1;
+    this.blackHole.body.collideWorldBounds = true;
   }
 
   // Generate 12 asteroids if all asteroids have exploded
@@ -286,6 +325,47 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
+  // Generate 10 meteors
+  meteorShower() {
+    // Callback
+    for (let i = 0; i < 35; i++) {
+      this.time.delayedCall(i * 400, this.spawnMeteor, [], this);
+    }
+  }
+
+  spawnComet() {
+    // Add the sprite
+    const xx = Math.floor(this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    const comet = this.physics.add.sprite(xx, yy, "meteorite");
+    Align.scaleToGameWidth(comet, 0.15);
+    comet.angle = 35;
+    comet.body.angularVelocity = 1;
+    comet.body.setVelocity(-150, Math.random() * 100);
+  }
+
+  spawnMeteor() {
+    // Add the sprite
+    const xx = Math.floor(this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+
+    const meteor = this.physics.add.sprite(xx, yy, "meteor");
+    Align.scaleToGameWidth(meteor, 0.2);
+    this.meteorGroup.add(meteor);
+
+    // Set the interaction collision of the battery
+    meteor.body.setVelocity(-230, Math.random() * 100);
+    meteor.body.bounce.setTo(1, 1);
+    meteor.body.angularVelocity = 1;
+    meteor.angle = 135;
+    meteor.body.collideWorldBounds = false;
+
+    emitter.emit(G.PLAY_METEOR_SOUND, "meteor");
+
+    this.setMeteorColliders();
+  }
+
   /**
    * ----------------
    * Collision Methods
@@ -304,7 +384,7 @@ class SceneMain extends Phaser.Scene {
     this.physics.add.collider(
       this.eBulletGroup,
       this.ship,
-      this.damagePlayer,
+      this.shotPlayer,
       null,
       this
     );
@@ -395,6 +475,44 @@ class SceneMain extends Phaser.Scene {
     );
   }
 
+  setMeteorColliders() {
+    this.physics.add.collider(this.meteorGroup);
+    this.physics.add.collider(
+      this.meteorGroup,
+      this.ship,
+      this.shipHitByMeteor,
+      null,
+      this
+    );
+    this.physics.add.collider(
+      this.meteorGroup,
+      this.eship,
+      this.destroyObject,
+      null,
+      this
+    );
+  }
+
+  annihilateObject(blackHole, object) {
+    let objectAngle = this.physics.moveTo(
+      object,
+      blackHole.x,
+      blackHole.y,
+      150
+    );
+    objectAngle = this.toDegrees(objectAngle);
+    object.angle = objectAngle;
+    object.alpha -= 0.05;
+
+    if (object.alpha === 0) {
+      object.destroy();
+    }
+  }
+
+  superSlowShip(blackHole, ship) {
+    console.log(blackHole.x - ship.x);
+  }
+
   // Create colliders for rocks
   setRockColliders() {
     this.physics.add.collider(this.asteroidGroup);
@@ -432,6 +550,14 @@ class SceneMain extends Phaser.Scene {
   }
 
   makeInfo() {
+    // this.playerHealthBar = new HealthBar({
+    //   scene: this,
+    //   x: this.ship.x - 35,
+    //   y: this.ship.y - 50,
+    //   width: this.totalPlayerLife,
+    //   height: 7
+    // });
+
     this.playerHPText = this.add.text(
       0,
       0,
@@ -532,6 +658,15 @@ class SceneMain extends Phaser.Scene {
     this.spawnAsteroids();
   }
 
+  destroyObject(eship, object) {
+    object.destroy();
+
+    // Add the sprite image then play the animation
+    const explosion = this.add.sprite(object.x, object.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+  }
+
   destroyRockOnly(object, rock) {
     rock.destroy();
 
@@ -550,7 +685,7 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "explode");
   }
 
-  damagePlayer(ship, bullet) {
+  shotPlayer(ship, bullet) {
     const explosion = this.add.sprite(this.ship.x, this.ship.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
@@ -559,6 +694,28 @@ class SceneMain extends Phaser.Scene {
       this.downPlayer();
       bullet.destroy();
     }
+  }
+
+  shipHitByKamikaze() {
+    const explosion = this.add.sprite(this.ship.x, this.ship.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+    if (!this.wearingShield) {
+      this.playerHP -= 5;
+      this.downPlayer();
+    }
+  }
+
+  shipHitByMeteor(ship, meteor) {
+    const explosion = this.add.sprite(meteor.x, meteor.y, "exp");
+    explosion.play("boom");
+    emitter.emit(G.PLAY_SOUND, "explode");
+
+    if (!this.wearingShield) {
+      this.playerHP -= 1;
+      this.downPlayer();
+    }
+    meteor.destroy();
   }
 
   damageEnemy(ship, bullet) {
@@ -579,6 +736,9 @@ class SceneMain extends Phaser.Scene {
   }
 
   downPlayer() {
+    const per = Math.floor((this.playerHP / this.totalPlayerLife) * 100);
+
+    // this.playerHealthBar.setLife(per);
     this.playerHPText.setText("Your Ship\n" + this.playerHP);
     if (this.playerHP < 1) {
       model.playerWon = false;
@@ -607,8 +767,12 @@ class SceneMain extends Phaser.Scene {
     // Seconds conditions
     this.seconds += 1;
 
+    if (this.seconds % 15 === 0) {
+      this.chargeMothership();
+    }
+
     // Spawns a star every 20 seconds
-    if (this.seconds % 5 === 0) {
+    if (this.seconds % 20 === 0) {
       this.spawnStar();
     }
 
@@ -623,6 +787,7 @@ class SceneMain extends Phaser.Scene {
     }
 
     if (this.seconds === 60) {
+      this.meteorShower();
       this.seconds = 0;
       this.minutes += 1;
     }
@@ -658,7 +823,7 @@ class SceneMain extends Phaser.Scene {
 
   obtainBattery(ship, battery) {
     battery.destroy();
-    emitter.emit(G.PLAY_STAR_SOUND, "starSound");
+    emitter.emit(G.PLAY_BATTERY_SOUND, "battery");
     if (this.batteries < 3) {
       this.batteries += 1;
       this.batteriesInfo();
@@ -709,17 +874,17 @@ class SceneMain extends Phaser.Scene {
   moveUp() {
     this.ship.setVelocityY(-this.shipVelocity);
     this.ship.angle = 270;
-    this.enemyShipChase();
+    this.mothershipChase();
   }
   moveDown() {
     this.ship.setVelocityY(this.shipVelocity);
     this.ship.angle = 90;
-    this.enemyShipChase();
+    this.mothershipChase();
   }
   moveLeft() {
     this.ship.setVelocityX(-this.shipVelocity);
     this.ship.angle = 180;
-    this.enemyShipChase();
+    this.mothershipChase();
   }
   moveRight() {
     this.ship.setVelocityX(this.shipVelocity);
@@ -727,7 +892,7 @@ class SceneMain extends Phaser.Scene {
     // this.shield.x = this.ship.x;
     // this.shield.y = this.ship.y;
     // this.shield.angle = this.ship.angle;
-    this.enemyShipChase();
+    this.mothershipChase();
   }
 
   shiftSouthEast() {
@@ -761,6 +926,8 @@ class SceneMain extends Phaser.Scene {
         this.shipVelocityDiag = 180;
         this.batteriesInfo();
 
+        emitter.emit(G.PLAY_TURBO_SOUND, "turbo");
+
         setTimeout(() => {
           this.shipVelocity = 100;
           this.shipVelocityDiag = 80;
@@ -779,6 +946,8 @@ class SceneMain extends Phaser.Scene {
       this.shield = this.physics.add.sprite(this.ship.x, this.ship.y, "shield");
       Align.scaleToGameWidth(this.shield, 0.225);
       this.setShieldColliders();
+
+      emitter.emit(G.PLAY_SHIELD_SOUND, "shield");
 
       // Callback
       this.time.delayedCall(10000, this.removeShield, [], this);
@@ -843,26 +1012,118 @@ class SceneMain extends Phaser.Scene {
     emitter.emit(G.PLAY_SOUND, "enemyShoot");
   }
 
-  enemyShipChase() {
-    let mothershipSpeed = 50;
+  // Fires the enemy bullet every 0.5 seconds
+  barrageEnemyBullet() {
+    const directionObject = this.getDirectionFromAngle(this.eship.angle);
+    const projectileSpeed = 300;
 
-    if (this.enemyHP < this.totalEnemyLife / 2) {
-      mothershipSpeed = 65;
-    }
-
-    if (this.enemyHP < this.totalEnemyLife / 4) {
-      mothershipSpeed = 80;
-    }
-
-    // Enemy ship movement
-    let enemyAngle = this.physics.moveTo(
-      this.eship,
-      this.ship.x,
-      this.ship.y,
-      mothershipSpeed
+    const eBullet = this.physics.add.sprite(
+      this.eship.x,
+      this.eship.y,
+      "ebullet"
     );
-    enemyAngle = this.toDegrees(enemyAngle);
-    this.eship.angle = enemyAngle;
+    eBullet.angle = this.eship.angle;
+    this.eBulletGroup.add(eBullet);
+    eBullet.body.angularVelocity = 1;
+
+    // Set the velocity based on the direction object
+    eBullet.body.setVelocity(
+      directionObject.tx * projectileSpeed,
+      directionObject.ty * projectileSpeed
+    );
+
+    emitter.emit(G.PLAY_SOUND, "enemyShoot");
+  }
+
+  kamikaze() {
+    let shipDistX = Math.abs(this.ship.x - this.eship.x);
+    let shipDistY = Math.abs(this.ship.y - this.eship.y);
+
+    if (shipDistX > 1 && shipDistY > 1) {
+      let mothershipSpeed = 500;
+      let enemyAngle = this.physics.moveTo(
+        this.eship,
+        this.ship.x,
+        this.ship.y,
+        mothershipSpeed
+      );
+      enemyAngle = this.toDegrees(enemyAngle);
+      this.eship.angle = enemyAngle;
+    } else {
+      this.shipHitByKamikaze();
+      this.normalizeMothership();
+    }
+  }
+
+  chargeMothership() {
+    this.mShipIsCharging = true;
+    emitter.emit(G.PLAY_CHARGING_SOUND, "charging");
+    this.time.delayedCall(2000, this.randomAttack, [], this);
+  }
+
+  // Chooses a random attack after charging for 2 seconds
+  randomAttack() {
+    this.mShipIsCharging = false;
+    const attacks = [this.tornadoAttack, this.lungeAttack];
+    const x = Math.floor(Math.random() * 2);
+
+    if (this.mShipAttacks === 0) {
+      this.tornadoAttack();
+    } else {
+      if (x === 0) {
+        this.tornadoAttack();
+      } else {
+        this.lungeAttack();
+      }
+    }
+
+    this.mShipAttacks += 1;
+  }
+
+  tornadoAttack() {
+    this.mShipIsSpinning = true;
+
+    for (let i = 0; i < 25; i++) {
+      this.time.delayedCall(i * 80, this.barrageEnemyBullet, [], this);
+    }
+
+    this.time.delayedCall(2000, this.normalizeMothership, [], this);
+  }
+
+  lungeAttack() {
+    this.mShipIsLunging = true;
+
+    this.time.delayedCall(1500, this.normalizeMothership, [], this);
+  }
+
+  normalizeMothership() {
+    this.mShipIsSpinning = false;
+    this.mShipIsLunging = false;
+  }
+
+  mothershipChase() {
+    if (
+      !this.mShipIsCharging &&
+      !this.mShipIsSpinning &&
+      !this.mShipIsLunging
+    ) {
+      let mothershipSpeed = 50;
+      if (this.enemyHP < this.totalEnemyLife / 2) {
+        mothershipSpeed = 65;
+      }
+      if (this.enemyHP < this.totalEnemyLife / 4) {
+        mothershipSpeed = 80;
+      }
+      // Enemy ship movement
+      let enemyAngle = this.physics.moveTo(
+        this.eship,
+        this.ship.x,
+        this.ship.y,
+        mothershipSpeed
+      );
+      enemyAngle = this.toDegrees(enemyAngle);
+      this.eship.angle = enemyAngle;
+    }
   }
 
   // Get direction from angle
@@ -879,6 +1140,64 @@ class SceneMain extends Phaser.Scene {
     return angle * (180 / Math.PI);
   }
 
+  superSlow() {
+    // Annihilate asteroids
+    this.physics.overlap(
+      this.blackHole,
+      this.ship,
+      this.superSlowShip,
+      null,
+      this
+    );
+  }
+
+  annihilate() {
+    // Annihilate asteroids
+    this.physics.overlap(
+      this.blackHole,
+      this.asteroidGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate stars
+    this.physics.overlap(
+      this.blackHole,
+      this.starGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate batteries
+    this.physics.overlap(
+      this.blackHole,
+      this.batteryGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate shields
+    this.physics.overlap(
+      this.blackHole,
+      this.shieldGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate bullets
+    this.physics.overlap(
+      this.blackHole,
+      this.bulletGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+  }
+
   update() {
     this.stopwatch();
     this.ship.setVelocityX(0);
@@ -892,6 +1211,7 @@ class SceneMain extends Phaser.Scene {
     // Controls
     const cursors = this.input.keyboard.createCursorKeys();
 
+    // Horizontal & Vertical Controls
     if (cursors.left.isDown) {
       this.moveLeft();
     } else if (cursors.up.isDown) {
@@ -902,6 +1222,7 @@ class SceneMain extends Phaser.Scene {
       this.moveRight();
     }
 
+    // Diagonal Controls
     if (cursors.left.isDown && cursors.up.isDown) {
       this.shiftNorthWest();
     } else if (cursors.right.isDown && cursors.up.isDown) {
@@ -912,19 +1233,17 @@ class SceneMain extends Phaser.Scene {
       this.shiftSouthWest();
     }
 
-    // Detect proximity between _____
+    // NO LONGER USED: The ship will not move if the click is too close
     let distanceX = Math.abs(this.ship.x - this.targetX);
     let distanceY = Math.abs(this.ship.y - this.targetY);
     let range = 5;
-
     if (distanceX < 10 && distanceY < 10) {
       this.ship.body.setVelocity(0, 0);
     }
 
-    // Detect proximity between ship and eship
+    // Detect proximity between ship and eship; fires bullets if close
     let shipDistX = Math.abs(this.ship.x - this.eship.x);
     let shipDistY = Math.abs(this.ship.y - this.eship.y);
-
     if (this.enemyHP < Math.floor(this.totalEnemyLife / 2)) {
       range = 4;
     }
@@ -937,14 +1256,55 @@ class SceneMain extends Phaser.Scene {
     if (this.enemyHP < Math.floor(this.totalEnemyLife / 5)) {
       range = 1;
     }
-
-    // Fire bullet if ship gets close
-    // this.fireEnemyBullet();
     if (
       shipDistX < game.config.width / range &&
       shipDistY < game.config.height / range
     ) {
       this.fireEnemyBullet();
     }
+
+    // Spinning black hole
+    if (this.blackHole.angle === 360) {
+      this.blackHole.angle = 1;
+    } else {
+      this.blackHole.angle += 2;
+    }
+
+    // Slowly grow the black hole
+    // this.blackHole.scaleX += 0.0001;
+    // this.blackHole.scaleY += 0.0001;
+
+    let blackHoleDistX = Math.abs(this.ship.x - this.blackHole.x);
+    let blackHoleDistY = Math.abs(this.ship.y - this.blackHole.y);
+    if (blackHoleDistX < 100 && blackHoleDistY < 100) {
+      this.shipVelocity = 40;
+      this.shipVelocityDiag = 30;
+    } else if (!this.stillBoosting) {
+      this.shipVelocity = 100;
+      this.shipVelocityDiag = 80;
+    }
+
+    // Charge mothership
+    if (this.mShipIsCharging) {
+      this.eship.scale += 0.004;
+    } else {
+      Align.scaleToGameWidth(this.eship, 0.25);
+    }
+
+    if (this.mShipIsLunging) {
+      this.kamikaze();
+    }
+
+    if (this.mShipIsSpinning) {
+      this.eship.angle += 10;
+    }
+
+    // Any object that overlaps with the black hole will be annihilated
+    this.annihilate();
+    // this.superSlow();
+
+    // Follow ship
+    // this.playerHealthBar.x = this.ship.x - 35;
+    // this.playerHealthBar.y = this.ship.y - 50;
   }
 }
