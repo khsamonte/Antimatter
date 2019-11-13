@@ -25,6 +25,15 @@ class HealthBar extends Phaser.GameObjects.Container {
       config.height = 7;
     }
 
+    this.width = config.width;
+    this.height = config.height;
+    this.color = config.color;
+
+    this.border = this.scene.add.graphics();
+    this.border.fillStyle(0xffffff, 1);
+    this.border.fillRect(-1, -1, config.width + 2, config.height + 2);
+    this.add(this.border);
+
     // Adding the loading graphics to the scene
     this.space = this.scene.add.graphics();
     this.space.fillStyle(0x000000, 1);
@@ -36,9 +45,6 @@ class HealthBar extends Phaser.GameObjects.Container {
     this.health.fillRect(0, 0, config.width, config.height);
     this.add(this.health);
 
-    // Positioning the graphics and component in the middle
-    // this.health.x = -config.width / 2;
-    // this.health.y = -config.height / 2;
     if (config.x) {
       this.x = config.x;
     }
@@ -55,7 +61,11 @@ class HealthBar extends Phaser.GameObjects.Container {
   //   this.health.scaleX = per;
   // }
 
-  // setLife(per) {
-  //   this.health.fillRect(0, 0, per * 0.7, 7);
-  // }
+  setLife(per, totalHP) {
+    const totalPer = totalHP * 0.01;
+
+    this.health.clear();
+    this.health.fillStyle(this.color, 1);
+    this.health.fillRect(0, 0, per * totalPer, this.height);
+  }
 }

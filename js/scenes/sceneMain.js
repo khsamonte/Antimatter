@@ -568,13 +568,21 @@ class SceneMain extends Phaser.Scene {
   }
 
   makeInfo() {
-    // this.playerHealthBar = new HealthBar({
-    //   scene: this,
-    //   x: this.ship.x - 35,
-    //   y: this.ship.y - 50,
-    //   width: this.totalPlayerLife,
-    //   height: 7
-    // });
+    this.playerHealthBar = new HealthBar({
+      scene: this,
+      x: this.ship.x - 35,
+      y: this.ship.y - 50,
+      width: this.totalPlayerLife,
+      height: 7
+    });
+
+    this.mothershipHealthBar = new HealthBar({
+      scene: this,
+      x: this.eship.x - 35,
+      y: this.eship.y - 50,
+      width: this.totalEnemyLife,
+      height: 7
+    });
 
     this.playerHPText = this.add.text(
       0,
@@ -741,7 +749,10 @@ class SceneMain extends Phaser.Scene {
   downPlayer() {
     const per = Math.floor((this.playerHP / this.totalPlayerLife) * 100);
 
-    // this.playerHealthBar.setLife(per);
+    // Official
+    this.playerHealthBar.setLife(per, this.totalPlayerLife);
+
+    // Unofficial
     this.playerHPText.setText("Your Ship\n" + this.playerHP);
     if (this.playerHP < 1) {
       model.playerWon = false;
@@ -751,6 +762,9 @@ class SceneMain extends Phaser.Scene {
 
   downEnemy() {
     this.enemyHP -= 1;
+    const per = Math.floor((this.enemyHP / this.totalEnemyLife) * 100);
+    // Official
+    this.mothershipHealthBar.setLife(per, this.totalEnemyLife);
     this.enemyHPText.setText("Mothership\n" + this.enemyHP);
     if (this.enemyHP < 1) {
       model.playerWon = true;
@@ -821,6 +835,11 @@ class SceneMain extends Phaser.Scene {
     } else {
       this.playerHP = this.totalPlayerLife;
     }
+
+    const per = Math.floor((this.playerHP / this.totalPlayerLife) * 100);
+
+    this.playerHealthBar.setLife(per, this.totalPlayerLife);
+
     this.playerHPText.setText("Your Ship\n" + this.playerHP);
   }
 
@@ -1307,7 +1326,10 @@ class SceneMain extends Phaser.Scene {
     // this.superSlow();
 
     // Follow ship
-    // this.playerHealthBar.x = this.ship.x - 35;
-    // this.playerHealthBar.y = this.ship.y - 50;
+    this.playerHealthBar.x = this.ship.x - 35;
+    this.playerHealthBar.y = this.ship.y - 50;
+
+    this.mothershipHealthBar.x = this.eship.x - 60;
+    this.mothershipHealthBar.y = this.eship.y - 50;
   }
 }
