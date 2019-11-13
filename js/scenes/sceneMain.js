@@ -678,7 +678,7 @@ class SceneMain extends Phaser.Scene {
     this.spawnAsteroids();
   }
 
-  // Make the object explode (used in meteors)
+  // Make the object explode (used in meteors on eship, bullets on shield, asteroid in shield)
   destroyObject(objectItCollidedWith, object) {
     object.destroy();
 

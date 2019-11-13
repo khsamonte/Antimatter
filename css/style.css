@@ -60,3 +60,13 @@ body {
 .rules b {
   color: #fff;
 }
+
+@media (max-width: 640px) {
+  .rules {
+    display: none;
+  }
+
+  .container {
+    padding-top: 0;
+  }
+}
