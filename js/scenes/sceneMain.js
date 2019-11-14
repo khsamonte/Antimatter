@@ -10,6 +10,14 @@
 class SceneMain extends Phaser.Scene {
   constructor() {
     super("SceneMain");
+
+    // Initialise time components
+    this.seconds = 0;
+    this.minutes = 0;
+
+    // Centre of the screen
+    this.centerX = game.config.width / 2;
+    this.centerY = game.config.height / 2;
   }
 
   create() {
@@ -25,20 +33,16 @@ class SceneMain extends Phaser.Scene {
     // The state of the game
     model.playerWon = true;
 
-    // Centre of the screen
-    this.centerX = game.config.width / 2;
-    this.centerY = game.config.height / 2;
-
-    // Initialise time components
-    this.seconds = 0;
-    this.minutes = 0;
-
     // Add background image
     this.background = this.add.image(0, 0, "background");
     this.background.setOrigin(0, 0);
 
-    // Adds the first space objects
+    // Objects that should be below the ship
+    this.setGroups();
+    this.spawnWormhole();
     this.createBlackHole();
+
+    // Adds the first space objects
     this.createShip();
     this.createMothership();
 
@@ -52,12 +56,11 @@ class SceneMain extends Phaser.Scene {
     // Setting up the game itself
     this.setKeyboardEvents();
     this.setWorldBoundaries();
-    this.setGroups();
+    this.spawnInitialGameObjects();
 
     // Generate the information panels then set asteroids and colliders
     this.makeInfo();
     this.batteriesInfo();
-    this.spawnInitialGameObjects();
 
     // TODO: Sound Buttons for mobile
     // const sb = new SoundButtons({ scene: this });
@@ -112,7 +115,6 @@ class SceneMain extends Phaser.Scene {
     // Space Objects
     this.spawnAsteroids();
     this.meteorShower();
-    this.spawnWormhole();
 
     // Items
     this.spawnStar();
@@ -170,6 +172,8 @@ class SceneMain extends Phaser.Scene {
     this.ship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.ship, 0.125);
 
+    this.trueShipScale = this.ship.scaleX;
+
     // HP
     this.totalPlayerLife = 70;
     this.playerHP = this.totalPlayerLife;
@@ -178,6 +182,10 @@ class SceneMain extends Phaser.Scene {
     this.batteries = 0;
     this.stillBoosting = false;
     this.wearingShield = false;
+
+    // Wormhole Status
+    this.shipPulledToWormhole = false;
+    this.shipIsImmuneToWormhole = false;
 
     // Default ship movement velocity
     this.shipVelocity = 100;
@@ -215,9 +223,10 @@ class SceneMain extends Phaser.Scene {
       position.yy,
       "blackhole"
     );
-    Align.scaleToGameWidth(this.blackHole, 0.25);
+    Align.scaleToGameWidth(this.blackHole, 0.15);
 
     this.blackHole.body.setVelocity(velocity.x, velocity.y);
+    this.blackHole.body.immovable = true;
     this.blackHole.body.bounce.setTo(1, 1);
     this.blackHole.body.angularVelocity = 1;
     this.blackHole.body.collideWorldBounds = true;
@@ -326,7 +335,7 @@ class SceneMain extends Phaser.Scene {
 
       // Randomise every group node's x and y in the whole background
       this.asteroidGroup.children.iterate(
-        function(child) {
+        function (child) {
           // Randomise spawn of asteroids anywhere in the field
           const xx = Math.floor(Math.random() * this.background.displayWidth);
           const yy = Math.floor(Math.random() * this.background.displayHeight);
@@ -344,37 +353,33 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
+  // Creates a wormhole that teleports the position of the ship
   spawnWormhole() {
-    const xx = Math.floor(Math.random() * this.background.displayWidth);
-    const yy = Math.floor(Math.random() * this.background.displayHeight);
+    const xx = Math.floor(Math.random() * game.config.width);
+    const yy = Math.floor(Math.random() * game.config.height);
     const velocity = this.randomiseInitialVelocity(1);
 
     this.wormhole = this.physics.add.sprite(xx, yy, "wormhole");
-    Align.scaleToGameWidth(this.wormhole, 0.4);
+    Align.scaleToGameWidth(this.wormhole, 0.3);
     this.trueWormholeScale = this.wormhole.scaleX;
     this.wormhole.body.bounce.setTo(1, 1);
+    this.wormhole.body.angularVelocity = 1;
+    this.wormhole.body.immovable = true;
     this.wormhole.body.setVelocity(velocity.x, velocity.y);
     this.wormhole.body.collideWorldBounds = true;
 
-    this.wormholeIsShrinking = false;
-    this.wormholeIsGrowing = false;
-    this.wormholeHasEntered = false;
+    // Status of wormhole
+    this.wormholeIsClosing = false;
+    this.wormholeIsReopening = false;
+    this.shipHasEnteredWormhole = false;
+    this.wormholeIsDisappearing = false;
 
     this.wormholeGroup.add(this.wormhole);
-  }
 
-  openWormhole() {
-    const xx = Math.floor(Math.random() * this.background.displayWidth);
-    const yy = Math.floor(Math.random() * this.background.displayHeight);
-    const velocity = this.randomiseInitialVelocity(1);
-
-    this.wormhole = this.physics.add.sprite(xx, yy, "wormhole");
-    Align.scaleToGameWidth(this.wormhole, 0);
-    this.wormhole.body.bounce.setTo(1, 1);
-    this.wormhole.body.setVelocity(velocity.x, velocity.y);
-    this.wormhole.body.collideWorldBounds = true;
-
-    this.wormholeIsShrinking = false;
+    // Spawning wormhole must be animated
+    this.wormhole.scaleX = 0;
+    this.wormhole.scaleY = 0;
+    this.wormholeIsSpawning = true;
   }
 
   spawnComet() {
@@ -616,11 +621,23 @@ class SceneMain extends Phaser.Scene {
     // Health Bar of the ship player
     this.playerHealthBar = new HealthBar({
       scene: this,
-      x: this.ship.x - 35,
+      x: this.ship.x - (this.totalPlayerLife / 2),
       y: this.ship.y - 50,
       width: this.totalPlayerLife,
-      height: 7
+      height: 11
     });
+
+    // HP Text of the ship player
+    this.playerHPText = this.add.text(
+      this.ship.x,
+      this.playerHealthBar.y,
+      this.totalPlayerLife,
+      {
+        align: "center",
+        fontFamily: "Arial",
+        fontSize: 10
+      }
+    );
 
     // Health Bar of the mothership
     this.mothershipHealthBar = new HealthBar({
@@ -628,26 +645,19 @@ class SceneMain extends Phaser.Scene {
       x: this.eship.x - 35,
       y: this.eship.y - 50,
       width: this.totalEnemyLife,
-      height: 7
+      height: 11
     });
 
-    // this.playerHPText = this.add.text(
-    //   0,
-    //   0,
-    //   "Your Ship\n" + this.totalPlayerLife,
-    //   {
-    //     align: "center",
-    //     fontFamily: "Varela Round",
-    //     fontSize: game.config.width / 30,
-    //     backgroundColor: "rgba(0, 0, 0, 0.5)"
-    //   }
-    // );
-    // this.enemyHPText = this.add.text(0, 0, "Mothership\n120", {
-    //   align: "center",
-    //   fontFamily: "Varela Round",
-    //   fontSize: game.config.width / 30,
-    //   backgroundColor: "rgba(0, 0, 0, 0.5)"
-    // });
+    // HP Text of the mothership
+    this.enemyHPText = this.add.text(
+      this.eship.x,
+      this.mothershipHealthBar.y,
+      this.totalEnemyLife,
+      {
+        align: "center",
+        fontFamily: "Arial",
+        fontSize: 10
+      });
 
     this.gameTimerText = this.add.text(0, 0, "00:00", {
       align: "center",
@@ -656,33 +666,41 @@ class SceneMain extends Phaser.Scene {
       backgroundColor: "rgba(0, 0, 0, 0.5)"
     });
 
-    // this.playerHPText.setOrigin(0.5, 0.5);
-    // this.enemyHPText.setOrigin(0.5, 0.5);
+    this.playerHPText.setOrigin(0.5, 0);
+    this.enemyHPText.setOrigin(0.5, 0);
     this.gameTimerText.setOrigin(0.5, 0.5);
 
     this.uiGrid = new AlignGrid({ scene: this, rows: 11, cols: 11 });
     // this.uiGrid.showNumbers();
 
-    // this.uiGrid.placeAtIndex(2, this.playerHPText);
-    // this.uiGrid.placeAtIndex(9, this.enemyHPText);
     this.uiGrid.placeAtIndex(5, this.gameTimerText);
 
-    // Icons of the ships
-    // this.shipIcon = this.add.image(0, 0, "ship");
-    // this.mothershipIcon = this.add.image(0, 0, "eship");
-    // Align.scaleToGameWidth(this.shipIcon, 0.05);
-    // Align.scaleToGameWidth(this.mothershipIcon, 0.05);
-    // this.uiGrid.placeAtIndex(0, this.shipIcon);
-    // this.uiGrid.placeAtIndex(7, this.mothershipIcon);
-    // this.shipIcon.angle = 270;
-    // this.mothershipIcon.angle = 270;
-
     // Fix the position of the texts
-    // this.playerHPText.setScrollFactor(0);
-    // this.enemyHPText.setScrollFactor(0);
     this.gameTimerText.setScrollFactor(0);
-    // this.shipIcon.setScrollFactor(0);
-    // this.mothershipIcon.setScrollFactor(0);
+  }
+
+  healthInfo() {
+    // Map the coordinates of the health every time the ships move
+    this.playerHealthBar.x = this.ship.x - (this.totalPlayerLife / 2);
+    this.playerHealthBar.y = this.ship.y - 40;
+    this.playerHPText.x = this.ship.x;
+    this.playerHPText.y = this.playerHealthBar.y;
+
+    this.mothershipHealthBar.x = this.eship.x - (this.totalEnemyLife / 2);
+    this.mothershipHealthBar.y = this.eship.y - 50;
+    this.enemyHPText.x = this.eship.x;
+    this.enemyHPText.y = this.mothershipHealthBar.y;
+
+    // Update the player health bar status
+    const per = Math.floor((this.playerHP / this.totalPlayerLife) * 100);
+    this.playerHealthBar.setLife(per, this.totalPlayerLife);
+    this.playerHPText.setText(this.playerHP);
+
+    // Update the mothership health bar status
+    const per2 = Math.floor((this.enemyHP / this.totalEnemyLife) * 100);
+    this.mothershipHealthBar.setLife(per2, this.totalEnemyLife);
+    this.enemyHPText.setText(this.enemyHP);
+
   }
 
   // Display the battery information
@@ -802,13 +820,6 @@ class SceneMain extends Phaser.Scene {
   }
 
   downPlayer() {
-    const per = Math.floor((this.playerHP / this.totalPlayerLife) * 100);
-
-    // Official
-    this.playerHealthBar.setLife(per, this.totalPlayerLife);
-
-    // Unofficial
-    // this.playerHPText.setText("Your Ship\n" + this.playerHP);
     if (this.playerHP < 1) {
       model.playerWon = false;
       this.scene.start("SceneOver");
@@ -817,10 +828,6 @@ class SceneMain extends Phaser.Scene {
 
   downEnemy() {
     this.enemyHP -= 1;
-    const per = Math.floor((this.enemyHP / this.totalEnemyLife) * 100);
-    // Official
-    this.mothershipHealthBar.setLife(per, this.totalEnemyLife);
-    // this.enemyHPText.setText("Mothership\n" + this.enemyHP);
     if (this.enemyHP < 1) {
       model.playerWon = true;
       this.scene.start("SceneOver");
@@ -849,7 +856,7 @@ class SceneMain extends Phaser.Scene {
     }
 
     // Spawns a star every 25 seconds
-    if (this.seconds % 25 === 0) {
+    if (this.seconds % 5 === 0) {
       if (this.wormholeGroup.getChildren().length === 0) {
         this.spawnWormhole();
       }
@@ -892,8 +899,8 @@ class SceneMain extends Phaser.Scene {
   healPlayer(ship, star) {
     star.destroy();
     emitter.emit(G.PLAY_STAR_SOUND, "starSound");
-    if (this.playerHP < 68) {
-      this.playerHP += 2;
+    if (this.playerHP < 67) {
+      this.playerHP += 3;
     } else {
       this.playerHP = this.totalPlayerLife;
     }
@@ -949,7 +956,7 @@ class SceneMain extends Phaser.Scene {
     this.downEnemy();
   }
 
-  // If the ship and the wormhole overlaps, the ship enters the wormhole
+  // 1. Update: If the ship and the wormhole overlaps, the ship enters the wormhole
   enterWormhole() {
     this.physics.overlap(
       this.ship,
@@ -960,39 +967,131 @@ class SceneMain extends Phaser.Scene {
     );
   }
 
+  // 2. Deals with all of the movement of hte ship once it taps the wormhole
   pullShipToWormhole() {
-    let shipAngle = this.physics.moveTo(
-      this.ship,
-      this.wormhole.x,
-      this.wormhole.y,
-      150
-    );
-    shipAngle = this.toDegrees(shipAngle);
-    this.ship.angle = shipAngle;
+    this.shipPulledToWormhole = true;
 
-    // this.playerHealthBar.alpha = 0;
-
-    this.time.delayedCall(500, this.shrinkWormhole, [], this);
-  }
-
-  shrinkWormhole() {
-    if (!this.wormholeHasEntered) {
-      this.wormholeHasEntered = true;
-      this.wormholeIsShrinking = true;
+    // Movement of ship when entering wormhole
+    if (this.shipPulledToWormhole) {
+      let shipAngle = this.physics.moveTo(
+        this.ship,
+        this.wormhole.x,
+        this.wormhole.y,
+        150
+      );
+      shipAngle = this.toDegrees(shipAngle);
+      this.ship.angle = shipAngle;
     }
   }
 
+  // 3. Update: Shrinks and vanishes the ship before shrinking the wormhole
+  shipShrinksEnteringWormhole() {
+    if (!this.shipIsReappearing) {
+      this.playerHealthBar.alpha = 0;
+      this.playerHPText.alpha = 0;
+
+      if (this.ship.scaleX > 0 && this.ship.scaleY > 0 && this.ship.alpha > 0) {
+        this.ship.scaleX -= 0.01;
+        this.ship.scaleY -= 0.01;
+        this.ship.alpha -= 0.01;
+      } else {
+        this.shipPulledToWormhole = false;
+        this.startShrinkingWormhole();
+      }
+    }
+  }
+
+  // 4. The wormhole starts to shrink once the ship is inside the wormhole
+  startShrinkingWormhole() {
+    if (!this.shipHasEnteredWormhole) {
+      this.shipHasEnteredWormhole = true;
+      this.wormholeIsClosing = true;
+    }
+  }
+
+  // 5. Update: The wormhole incrementally shrinks
+  closeWormhole() {
+    if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+      this.wormhole.scaleX -= 0.0015;
+      this.wormhole.scaleY -= 0.0015;
+    } else {
+      this.wormholeIsClosing = false;
+      this.time.delayedCall(500, this.teleportWormhole, [], this);
+    }
+  }
+
+  // 6. Update: Once the wormhole has successfully shrunk, immediately teleport it
   teleportWormhole() {
-    if (!this.wormholeIsGrowing) {
+    // This condition prevents the script from re-running
+    if (!this.wormholeIsReopening) {
       const xx = Math.floor(Math.random() * this.background.displayWidth);
       const yy = Math.floor(Math.random() * this.background.displayHeight);
       this.wormhole.x = xx;
       this.wormhole.y = yy;
       this.ship.x = this.wormhole.x;
       this.ship.y = this.wormhole.y;
-      this.ship.alpha = 0;
 
-      this.wormholeIsGrowing = true;
+      this.wormholeIsReopening = true;
+    }
+  }
+
+  openWormhole() {
+    this.shipIsImmuneToWormhole = true;
+    if (
+      this.wormhole.scaleX < this.trueWormholeScale &&
+      this.wormhole.scaleY < this.trueWormholeScale
+    ) {
+      this.wormhole.scaleX += 0.0015;
+      this.wormhole.scaleY += 0.0015;
+    } else {
+      this.wormholeIsSpawning = false;
+      this.shipIsImmuneToWormhole = false;
+    }
+  }
+
+  // 7. Update: Reopen the wormhole once teleported
+  reopenWormhole() {
+    this.shipIsImmuneToWormhole = true;
+    if (
+      this.wormhole.scaleX < this.trueWormholeScale &&
+      this.wormhole.scaleY < this.trueWormholeScale
+    ) {
+      this.wormhole.scaleX += 0.0015;
+      this.wormhole.scaleY += 0.0015;
+    } else {
+      this.wormholeIsReopening = false;
+      this.shipIsReappearing = true;
+    }
+  }
+
+  // 8. Update: Spit ship out once the wormhole has reappeared
+  releaseShipFromWormhole() {
+    if (
+      this.ship.scaleX < this.trueShipScale &&
+      this.ship.scaleY < this.trueShipScale
+    ) {
+      this.ship.scaleX += 0.01;
+      this.ship.scaleY += 0.01;
+    } else {
+      this.wormholeIsDisappearing = true;
+    }
+
+    if (this.ship.alpha < 1) {
+      this.ship.alpha += 0.01;
+    }
+  }
+
+  vanishWormhole() {
+    this.playerHealthBar.alpha = 1;
+    this.playerHPText.alpha = 1;
+
+    if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+      this.wormhole.scaleX -= 0.0015;
+      this.wormhole.scaleY -= 0.0015;
+    } else {
+      this.wormholeIsDisappearing = false;
+      this.wormhole.destroy();
+      this.shipIsImmuneToWormhole = false;
     }
   }
 
@@ -1436,57 +1535,38 @@ class SceneMain extends Phaser.Scene {
     this.annihilate();
     // this.superSlow();
 
-    // Any object that overlaps with the wormhole
-    this.enterWormhole();
+    if (this.wormholeIsSpawning) {
+      this.openWormhole();
+    }
+
+    // 1. Checks if the ship has entered the wormhole if they overlap
+    if (!this.shipIsImmuneToWormhole) {
+      this.enterWormhole();
+    }
+
+    // 2. Ship incrementally shrinks as it's being pulled to the wormhole
+    if (this.shipPulledToWormhole) {
+      this.shipShrinksEnteringWormhole();
+    }
 
     // Shrink the wormhole
-    if (this.wormholeIsShrinking) {
-      this.ship.alpha -= 0.01;
+    if (this.wormholeIsClosing) {
+      this.closeWormhole();
+    }
 
-      if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
-        this.wormhole.scaleX -= 0.002;
-        this.wormhole.scaleY -= 0.002;
-      } else {
-        this.wormholeIsShrinking = false;
-        this.teleportWormhole();
-      }
+    if (this.wormholeIsReopening) {
+      this.reopenWormhole();
+    }
+
+    if (this.shipIsReappearing) {
+      this.releaseShipFromWormhole();
     }
 
     if (this.wormholeIsDisappearing) {
-      if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
-        this.wormhole.scaleX -= 0.002;
-        this.wormhole.scaleY -= 0.002;
-      } else {
-        this.wormhole.destroy();
-      }
+      this.vanishWormhole();
     }
 
-    if (this.wormholeIsGrowing) {
-      if (
-        this.wormhole.scaleX < this.trueWormholeScale &&
-        this.wormhole.scaleY < this.trueWormholeScale
-      ) {
-        this.wormhole.scaleX += 0.002;
-        this.wormhole.scaleY += 0.002;
-      } else {
-        // this.playerHealthBar.alpha = 1;
-        // this.playerHealthBar.x = this.ship.x - 35;
-        // this.playerHealthBar.y = this.ship.y - 50;
-
-        this.wormholeIsGrowing = false;
-        this.wormholeIsDisappearing = true;
-      }
-
-      if (this.ship.alpha < 1) {
-        this.ship.alpha += 0.01;
-      }
-    }
-
-    // Follow ship
-    this.playerHealthBar.x = this.ship.x - 35;
-    this.playerHealthBar.y = this.ship.y - 50;
-
-    this.mothershipHealthBar.x = this.eship.x - 60;
-    this.mothershipHealthBar.y = this.eship.y - 50;
+    // This function has everything to update the HP bars
+    this.healthInfo();
   }
 }

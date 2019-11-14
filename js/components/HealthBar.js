@@ -22,7 +22,7 @@ class HealthBar extends Phaser.GameObjects.Container {
       config.width = 70;
     }
     if (!config.height) {
-      config.height = 7;
+      config.height = 8;
     }
 
     this.width = config.width;
