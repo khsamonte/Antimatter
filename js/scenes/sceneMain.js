@@ -105,12 +105,14 @@ class SceneMain extends Phaser.Scene {
     // Space Objects
     this.asteroidGroup = this.physics.add.group({});
     this.meteorGroup = this.physics.add.group({});
+    this.wormholeGroup = this.physics.add.group({});
   }
 
   spawnInitialGameObjects() {
     // Space Objects
     this.spawnAsteroids();
     this.meteorShower();
+    this.spawnWormhole();
 
     // Items
     this.spawnStar();
@@ -185,6 +187,7 @@ class SceneMain extends Phaser.Scene {
   // The creation of the Mothership and all its attributes
   createMothership() {
     this.eship = this.physics.add.sprite(this.centerX, 0, "eship");
+    // this.eship.body.bounce.setTo(1, 1);
     this.eship.body.immovable = true;
     this.eship.body.collideWorldBounds = true;
     Align.scaleToGameWidth(this.eship, 0.25);
@@ -204,7 +207,7 @@ class SceneMain extends Phaser.Scene {
   createBlackHole() {
     // Randomise initial position and velocity
     const position = this.randomiseInitialPos();
-    const velocity = this.randomiseInitialVelocity(10);
+    const velocity = this.randomiseInitialVelocity(30);
 
     // Create the black hole
     this.blackHole = this.physics.add.sprite(
@@ -212,7 +215,7 @@ class SceneMain extends Phaser.Scene {
       position.yy,
       "blackhole"
     );
-    Align.scaleToGameWidth(this.blackHole, 0.7);
+    Align.scaleToGameWidth(this.blackHole, 0.25);
 
     this.blackHole.body.setVelocity(velocity.x, velocity.y);
     this.blackHole.body.bounce.setTo(1, 1);
@@ -341,6 +344,39 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
+  spawnWormhole() {
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+    const velocity = this.randomiseInitialVelocity(1);
+
+    this.wormhole = this.physics.add.sprite(xx, yy, "wormhole");
+    Align.scaleToGameWidth(this.wormhole, 0.4);
+    this.trueWormholeScale = this.wormhole.scaleX;
+    this.wormhole.body.bounce.setTo(1, 1);
+    this.wormhole.body.setVelocity(velocity.x, velocity.y);
+    this.wormhole.body.collideWorldBounds = true;
+
+    this.wormholeIsShrinking = false;
+    this.wormholeIsGrowing = false;
+    this.wormholeHasEntered = false;
+
+    this.wormholeGroup.add(this.wormhole);
+  }
+
+  openWormhole() {
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
+    const velocity = this.randomiseInitialVelocity(1);
+
+    this.wormhole = this.physics.add.sprite(xx, yy, "wormhole");
+    Align.scaleToGameWidth(this.wormhole, 0);
+    this.wormhole.body.bounce.setTo(1, 1);
+    this.wormhole.body.setVelocity(velocity.x, velocity.y);
+    this.wormhole.body.collideWorldBounds = true;
+
+    this.wormholeIsShrinking = false;
+  }
+
   spawnComet() {
     // Add the sprite
     const xx = Math.floor(this.background.displayWidth);
@@ -391,6 +427,15 @@ class SceneMain extends Phaser.Scene {
    */
 
   setColliders() {
+    // Ships
+    this.physics.add.collider(
+      this.ship,
+      this.eship,
+      this.lungingDamage,
+      null,
+      this
+    );
+
     // Bullets vs Ships
     this.physics.add.collider(
       this.bulletGroup,
@@ -568,6 +613,7 @@ class SceneMain extends Phaser.Scene {
   }
 
   makeInfo() {
+    // Health Bar of the ship player
     this.playerHealthBar = new HealthBar({
       scene: this,
       x: this.ship.x - 35,
@@ -576,6 +622,7 @@ class SceneMain extends Phaser.Scene {
       height: 7
     });
 
+    // Health Bar of the mothership
     this.mothershipHealthBar = new HealthBar({
       scene: this,
       x: this.eship.x - 35,
@@ -584,23 +631,24 @@ class SceneMain extends Phaser.Scene {
       height: 7
     });
 
-    this.playerHPText = this.add.text(
-      0,
-      0,
-      "Your Ship\n" + this.totalPlayerLife,
-      {
-        align: "center",
-        fontFamily: "Varela Round",
-        fontSize: game.config.width / 30,
-        backgroundColor: "rgba(0, 0, 0, 0.5)"
-      }
-    );
-    this.enemyHPText = this.add.text(0, 0, "Mothership\n120", {
-      align: "center",
-      fontFamily: "Varela Round",
-      fontSize: game.config.width / 30,
-      backgroundColor: "rgba(0, 0, 0, 0.5)"
-    });
+    // this.playerHPText = this.add.text(
+    //   0,
+    //   0,
+    //   "Your Ship\n" + this.totalPlayerLife,
+    //   {
+    //     align: "center",
+    //     fontFamily: "Varela Round",
+    //     fontSize: game.config.width / 30,
+    //     backgroundColor: "rgba(0, 0, 0, 0.5)"
+    //   }
+    // );
+    // this.enemyHPText = this.add.text(0, 0, "Mothership\n120", {
+    //   align: "center",
+    //   fontFamily: "Varela Round",
+    //   fontSize: game.config.width / 30,
+    //   backgroundColor: "rgba(0, 0, 0, 0.5)"
+    // });
+
     this.gameTimerText = this.add.text(0, 0, "00:00", {
       align: "center",
       fontFamily: "Varela Round",
@@ -608,33 +656,33 @@ class SceneMain extends Phaser.Scene {
       backgroundColor: "rgba(0, 0, 0, 0.5)"
     });
 
-    this.playerHPText.setOrigin(0.5, 0.5);
-    this.enemyHPText.setOrigin(0.5, 0.5);
+    // this.playerHPText.setOrigin(0.5, 0.5);
+    // this.enemyHPText.setOrigin(0.5, 0.5);
     this.gameTimerText.setOrigin(0.5, 0.5);
 
     this.uiGrid = new AlignGrid({ scene: this, rows: 11, cols: 11 });
     // this.uiGrid.showNumbers();
 
-    this.uiGrid.placeAtIndex(2, this.playerHPText);
+    // this.uiGrid.placeAtIndex(2, this.playerHPText);
+    // this.uiGrid.placeAtIndex(9, this.enemyHPText);
     this.uiGrid.placeAtIndex(5, this.gameTimerText);
-    this.uiGrid.placeAtIndex(9, this.enemyHPText);
 
     // Icons of the ships
-    this.shipIcon = this.add.image(0, 0, "ship");
-    this.mothershipIcon = this.add.image(0, 0, "eship");
-    Align.scaleToGameWidth(this.shipIcon, 0.05);
-    Align.scaleToGameWidth(this.mothershipIcon, 0.05);
-    this.uiGrid.placeAtIndex(0, this.shipIcon);
-    this.uiGrid.placeAtIndex(7, this.mothershipIcon);
-    this.shipIcon.angle = 270;
-    this.mothershipIcon.angle = 270;
+    // this.shipIcon = this.add.image(0, 0, "ship");
+    // this.mothershipIcon = this.add.image(0, 0, "eship");
+    // Align.scaleToGameWidth(this.shipIcon, 0.05);
+    // Align.scaleToGameWidth(this.mothershipIcon, 0.05);
+    // this.uiGrid.placeAtIndex(0, this.shipIcon);
+    // this.uiGrid.placeAtIndex(7, this.mothershipIcon);
+    // this.shipIcon.angle = 270;
+    // this.mothershipIcon.angle = 270;
 
     // Fix the position of the texts
-    this.playerHPText.setScrollFactor(0);
-    this.enemyHPText.setScrollFactor(0);
+    // this.playerHPText.setScrollFactor(0);
+    // this.enemyHPText.setScrollFactor(0);
     this.gameTimerText.setScrollFactor(0);
-    this.shipIcon.setScrollFactor(0);
-    this.mothershipIcon.setScrollFactor(0);
+    // this.shipIcon.setScrollFactor(0);
+    // this.mothershipIcon.setScrollFactor(0);
   }
 
   // Display the battery information
@@ -707,7 +755,14 @@ class SceneMain extends Phaser.Scene {
     }
   }
 
+  lungingDamage() {
+    if (this.mShipIsLunging) {
+      this.shipHitByKamikaze();
+    }
+  }
+
   shipHitByKamikaze() {
+    this.mShipIsLunging = false;
     const explosion = this.add.sprite(this.ship.x, this.ship.y, "exp");
     explosion.play("boom");
     emitter.emit(G.PLAY_SOUND, "explode");
@@ -753,7 +808,7 @@ class SceneMain extends Phaser.Scene {
     this.playerHealthBar.setLife(per, this.totalPlayerLife);
 
     // Unofficial
-    this.playerHPText.setText("Your Ship\n" + this.playerHP);
+    // this.playerHPText.setText("Your Ship\n" + this.playerHP);
     if (this.playerHP < 1) {
       model.playerWon = false;
       this.scene.start("SceneOver");
@@ -765,7 +820,7 @@ class SceneMain extends Phaser.Scene {
     const per = Math.floor((this.enemyHP / this.totalEnemyLife) * 100);
     // Official
     this.mothershipHealthBar.setLife(per, this.totalEnemyLife);
-    this.enemyHPText.setText("Mothership\n" + this.enemyHP);
+    // this.enemyHPText.setText("Mothership\n" + this.enemyHP);
     if (this.enemyHP < 1) {
       model.playerWon = true;
       this.scene.start("SceneOver");
@@ -791,6 +846,13 @@ class SceneMain extends Phaser.Scene {
     // Spawns a star every 20 seconds
     if (this.seconds % 20 === 0) {
       this.spawnStar();
+    }
+
+    // Spawns a star every 25 seconds
+    if (this.seconds % 25 === 0) {
+      if (this.wormholeGroup.getChildren().length === 0) {
+        this.spawnWormhole();
+      }
     }
 
     // Spawns a battery every 30 seconds
@@ -840,7 +902,7 @@ class SceneMain extends Phaser.Scene {
 
     this.playerHealthBar.setLife(per, this.totalPlayerLife);
 
-    this.playerHPText.setText("Your Ship\n" + this.playerHP);
+    // this.playerHPText.setText("Your Ship\n" + this.playerHP);
   }
 
   obtainBattery(ship, battery) {
@@ -885,6 +947,53 @@ class SceneMain extends Phaser.Scene {
     rock.destroy();
     this.spawnAsteroids();
     this.downEnemy();
+  }
+
+  // If the ship and the wormhole overlaps, the ship enters the wormhole
+  enterWormhole() {
+    this.physics.overlap(
+      this.ship,
+      this.wormhole,
+      this.pullShipToWormhole,
+      null,
+      this
+    );
+  }
+
+  pullShipToWormhole() {
+    let shipAngle = this.physics.moveTo(
+      this.ship,
+      this.wormhole.x,
+      this.wormhole.y,
+      150
+    );
+    shipAngle = this.toDegrees(shipAngle);
+    this.ship.angle = shipAngle;
+
+    // this.playerHealthBar.alpha = 0;
+
+    this.time.delayedCall(500, this.shrinkWormhole, [], this);
+  }
+
+  shrinkWormhole() {
+    if (!this.wormholeHasEntered) {
+      this.wormholeHasEntered = true;
+      this.wormholeIsShrinking = true;
+    }
+  }
+
+  teleportWormhole() {
+    if (!this.wormholeIsGrowing) {
+      const xx = Math.floor(Math.random() * this.background.displayWidth);
+      const yy = Math.floor(Math.random() * this.background.displayHeight);
+      this.wormhole.x = xx;
+      this.wormhole.y = yy;
+      this.ship.x = this.wormhole.x;
+      this.ship.y = this.wormhole.y;
+      this.ship.alpha = 0;
+
+      this.wormholeIsGrowing = true;
+    }
   }
 
   getTimer() {
@@ -1058,23 +1167,18 @@ class SceneMain extends Phaser.Scene {
   }
 
   kamikaze() {
-    let shipDistX = Math.abs(this.ship.x - this.eship.x);
-    let shipDistY = Math.abs(this.ship.y - this.eship.y);
+    this.mShipIsLunging = true;
 
-    if (shipDistX > 1 && shipDistY > 1) {
-      let mothershipSpeed = 500;
-      let enemyAngle = this.physics.moveTo(
-        this.eship,
-        this.ship.x,
-        this.ship.y,
-        mothershipSpeed
-      );
-      enemyAngle = this.toDegrees(enemyAngle);
-      this.eship.angle = enemyAngle;
-    } else {
-      this.shipHitByKamikaze();
-      this.normalizeMothership();
-    }
+    let enemyAngle = this.physics.moveTo(
+      this.eship,
+      this.ship.x,
+      this.ship.y,
+      500
+    );
+    enemyAngle = this.toDegrees(enemyAngle);
+    this.eship.angle = enemyAngle;
+
+    this.time.delayedCall(1500, this.normalizeMothership, [], this);
   }
 
   chargeMothership() {
@@ -1086,16 +1190,15 @@ class SceneMain extends Phaser.Scene {
   // Chooses a random attack after charging for 2 seconds
   randomAttack() {
     this.mShipIsCharging = false;
-    const attacks = [this.tornadoAttack, this.lungeAttack];
     const x = Math.floor(Math.random() * 2);
 
     if (this.mShipAttacks === 0) {
       this.tornadoAttack();
     } else {
-      if (x === 0) {
+      if (x === 1) {
         this.tornadoAttack();
       } else {
-        this.lungeAttack();
+        this.kamikaze();
       }
     }
 
@@ -1110,12 +1213,6 @@ class SceneMain extends Phaser.Scene {
     }
 
     this.time.delayedCall(2000, this.normalizeMothership, [], this);
-  }
-
-  lungeAttack() {
-    this.mShipIsLunging = true;
-
-    this.time.delayedCall(1500, this.normalizeMothership, [], this);
   }
 
   normalizeMothership() {
@@ -1218,6 +1315,24 @@ class SceneMain extends Phaser.Scene {
       null,
       this
     );
+
+    // Annihilate bullets
+    this.physics.overlap(
+      this.blackHole,
+      this.meteorGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
+
+    // Annihilate bullets
+    this.physics.overlap(
+      this.blackHole,
+      this.eBulletGroup,
+      this.annihilateObject,
+      null,
+      this
+    );
   }
 
   update() {
@@ -1285,12 +1400,8 @@ class SceneMain extends Phaser.Scene {
       this.fireEnemyBullet();
     }
 
-    // Spinning black hole
-    if (this.blackHole.angle === 360) {
-      this.blackHole.angle = 1;
-    } else {
-      this.blackHole.angle += 2;
-    }
+    this.blackHole.angle += 1;
+    this.wormhole.angle += 2;
 
     // Slowly grow the black hole
     // this.blackHole.scaleX += 0.0001;
@@ -1313,9 +1424,9 @@ class SceneMain extends Phaser.Scene {
       Align.scaleToGameWidth(this.eship, 0.25);
     }
 
-    if (this.mShipIsLunging) {
-      this.kamikaze();
-    }
+    // if (this.mShipIsLunging) {
+    //   this.kamikaze();
+    // }
 
     if (this.mShipIsSpinning) {
       this.eship.angle += 10;
@@ -1324,6 +1435,52 @@ class SceneMain extends Phaser.Scene {
     // Any object that overlaps with the black hole will be annihilated
     this.annihilate();
     // this.superSlow();
+
+    // Any object that overlaps with the wormhole
+    this.enterWormhole();
+
+    // Shrink the wormhole
+    if (this.wormholeIsShrinking) {
+      this.ship.alpha -= 0.01;
+
+      if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+        this.wormhole.scaleX -= 0.002;
+        this.wormhole.scaleY -= 0.002;
+      } else {
+        this.wormholeIsShrinking = false;
+        this.teleportWormhole();
+      }
+    }
+
+    if (this.wormholeIsDisappearing) {
+      if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+        this.wormhole.scaleX -= 0.002;
+        this.wormhole.scaleY -= 0.002;
+      } else {
+        this.wormhole.destroy();
+      }
+    }
+
+    if (this.wormholeIsGrowing) {
+      if (
+        this.wormhole.scaleX < this.trueWormholeScale &&
+        this.wormhole.scaleY < this.trueWormholeScale
+      ) {
+        this.wormhole.scaleX += 0.002;
+        this.wormhole.scaleY += 0.002;
+      } else {
+        // this.playerHealthBar.alpha = 1;
+        // this.playerHealthBar.x = this.ship.x - 35;
+        // this.playerHealthBar.y = this.ship.y - 50;
+
+        this.wormholeIsGrowing = false;
+        this.wormholeIsDisappearing = true;
+      }
+
+      if (this.ship.alpha < 1) {
+        this.ship.alpha += 0.01;
+      }
+    }
 
     // Follow ship
     this.playerHealthBar.x = this.ship.x - 35;
