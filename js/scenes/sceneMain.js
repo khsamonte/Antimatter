@@ -846,6 +846,13 @@ class SceneMain extends Phaser.Scene {
     // Seconds conditions
     this.seconds += 1;
 
+    // Spawns a new wormhole every 5 seconds IF there are no wormholes
+    if (this.seconds % 5 === 0) {
+      if (this.wormholeGroup.getChildren().length === 0) {
+        this.spawnWormhole();
+      }
+    }
+
     if (this.seconds % 15 === 0) {
       this.chargeMothership();
     }
@@ -853,13 +860,6 @@ class SceneMain extends Phaser.Scene {
     // Spawns a star every 20 seconds
     if (this.seconds % 20 === 0) {
       this.spawnStar();
-    }
-
-    // Spawns a star every 25 seconds
-    if (this.seconds % 5 === 0) {
-      if (this.wormholeGroup.getChildren().length === 0) {
-        this.spawnWormhole();
-      }
     }
 
     // Spawns a battery every 30 seconds
@@ -956,6 +956,22 @@ class SceneMain extends Phaser.Scene {
     this.downEnemy();
   }
 
+  // 0. Opens up a new wormhole (only for spawning)
+  openWormhole() {
+    this.shipIsImmuneToWormhole = true;
+    if (
+      this.wormhole.scaleX < this.trueWormholeScale &&
+      this.wormhole.scaleY < this.trueWormholeScale
+    ) {
+      console.log("Should be spawning, right? " + this.wormhole.scaleX);
+      this.wormhole.scaleX += 0.0015;
+      this.wormhole.scaleY += 0.0015;
+    } else {
+      this.wormholeIsSpawning = false;
+      this.shipIsImmuneToWormhole = false;
+    }
+  }
+
   // 1. Update: If the ship and the wormhole overlaps, the ship enters the wormhole
   enterWormhole() {
     this.physics.overlap(
@@ -1003,6 +1019,7 @@ class SceneMain extends Phaser.Scene {
 
   // 4. The wormhole starts to shrink once the ship is inside the wormhole
   startShrinkingWormhole() {
+    console.log("Start shrinking wormhole...")
     if (!this.shipHasEnteredWormhole) {
       this.shipHasEnteredWormhole = true;
       this.wormholeIsClosing = true;
@@ -1011,7 +1028,9 @@ class SceneMain extends Phaser.Scene {
 
   // 5. Update: The wormhole incrementally shrinks
   closeWormhole() {
+    console.log("Closing wormhole...");
     if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+      console.log("Should NOT be closing wormhole if spawning. " + this.wormhole.scaleX);
       this.wormhole.scaleX -= 0.0015;
       this.wormhole.scaleY -= 0.0015;
     } else {
@@ -1032,20 +1051,6 @@ class SceneMain extends Phaser.Scene {
       this.ship.y = this.wormhole.y;
 
       this.wormholeIsReopening = true;
-    }
-  }
-
-  openWormhole() {
-    this.shipIsImmuneToWormhole = true;
-    if (
-      this.wormhole.scaleX < this.trueWormholeScale &&
-      this.wormhole.scaleY < this.trueWormholeScale
-    ) {
-      this.wormhole.scaleX += 0.0015;
-      this.wormhole.scaleY += 0.0015;
-    } else {
-      this.wormholeIsSpawning = false;
-      this.shipIsImmuneToWormhole = false;
     }
   }
 
@@ -1073,6 +1078,7 @@ class SceneMain extends Phaser.Scene {
       this.ship.scaleX += 0.01;
       this.ship.scaleY += 0.01;
     } else {
+      this.shipIsReappearing = false;
       this.wormholeIsDisappearing = true;
     }
 
@@ -1085,13 +1091,16 @@ class SceneMain extends Phaser.Scene {
     this.playerHealthBar.alpha = 1;
     this.playerHPText.alpha = 1;
 
-    if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
-      this.wormhole.scaleX -= 0.0015;
-      this.wormhole.scaleY -= 0.0015;
-    } else {
-      this.wormholeIsDisappearing = false;
-      this.wormhole.destroy();
-      this.shipIsImmuneToWormhole = false;
+    // !wormholeIsSpawning stops vanishing
+    if (!this.wormholeIsSpawning) {
+      if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
+        this.wormhole.scaleX -= 0.0015;
+        this.wormhole.scaleY -= 0.0015;
+      } else {
+        this.wormholeIsDisappearing = false;
+        this.wormhole.destroy();
+        this.shipIsImmuneToWormhole = false;
+      }
     }
   }
 
@@ -1434,10 +1443,17 @@ class SceneMain extends Phaser.Scene {
     );
   }
 
+  setDepth() {
+    this.playerHPText.depth = 102;
+    this.playerHealthBar.depth = 101;
+    this.ship.depth = 100;
+  }
+
   update() {
     this.stopwatch();
     this.ship.setVelocityX(0);
     this.ship.setVelocityY(0);
+    this.setDepth();
 
     if (this.shield) {
       this.paintShield();
@@ -1535,6 +1551,7 @@ class SceneMain extends Phaser.Scene {
     this.annihilate();
     // this.superSlow();
 
+    // Only for birthing wormholes
     if (this.wormholeIsSpawning) {
       this.openWormhole();
     }
