@@ -14,7 +14,7 @@ let G;
 let controller;
 let config;
 
-window.onload = function() {
+window.onload = function () {
   // Looks at navigator.userAgent (built in every browser for detecting mobiles)
   let isMobile = navigator.userAgent.indexOf("Mobile");
   if (isMobile === -1) {

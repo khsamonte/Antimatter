@@ -186,6 +186,7 @@ class SceneMain extends Phaser.Scene {
     // Wormhole Status
     this.shipPulledToWormhole = false;
     this.shipIsImmuneToWormhole = false;
+    this.shipIsInsideWormhole = false;
 
     // Default ship movement velocity
     this.shipVelocity = 100;
@@ -355,8 +356,8 @@ class SceneMain extends Phaser.Scene {
 
   // Creates a wormhole that teleports the position of the ship
   spawnWormhole() {
-    const xx = Math.floor(Math.random() * game.config.width);
-    const yy = Math.floor(Math.random() * game.config.height);
+    const xx = Math.floor(Math.random() * this.background.displayWidth);
+    const yy = Math.floor(Math.random() * this.background.displayHeight);
     const velocity = this.randomiseInitialVelocity(1);
 
     this.wormhole = this.physics.add.sprite(xx, yy, "wormhole");
@@ -578,7 +579,7 @@ class SceneMain extends Phaser.Scene {
   }
 
   superSlowShip(blackHole, ship) {
-    console.log(blackHole.x - ship.x);
+    // console.log(blackHole.x - ship.x);
   }
 
   // Create colliders for rocks
@@ -853,6 +854,12 @@ class SceneMain extends Phaser.Scene {
       }
     }
 
+    // Relocates wormhole every 25 seconds
+    if (this.seconds % 25 === 0 && !this.shipIsInsideWormhole && !this.wormholeIsSpawning) {
+      this.wormholeIsDisappearing = true;
+      this.time.delayedCall(2000, this.spawnWormhole, [], this);
+    }
+
     if (this.seconds % 15 === 0) {
       this.chargeMothership();
     }
@@ -963,7 +970,6 @@ class SceneMain extends Phaser.Scene {
       this.wormhole.scaleX < this.trueWormholeScale &&
       this.wormhole.scaleY < this.trueWormholeScale
     ) {
-      console.log("Should be spawning, right? " + this.wormhole.scaleX);
       this.wormhole.scaleX += 0.0015;
       this.wormhole.scaleY += 0.0015;
     } else {
@@ -986,6 +992,7 @@ class SceneMain extends Phaser.Scene {
   // 2. Deals with all of the movement of hte ship once it taps the wormhole
   pullShipToWormhole() {
     this.shipPulledToWormhole = true;
+    this.shipIsInsideWormhole = true;
 
     // Movement of ship when entering wormhole
     if (this.shipPulledToWormhole) {
@@ -1019,7 +1026,6 @@ class SceneMain extends Phaser.Scene {
 
   // 4. The wormhole starts to shrink once the ship is inside the wormhole
   startShrinkingWormhole() {
-    console.log("Start shrinking wormhole...")
     if (!this.shipHasEnteredWormhole) {
       this.shipHasEnteredWormhole = true;
       this.wormholeIsClosing = true;
@@ -1028,9 +1034,7 @@ class SceneMain extends Phaser.Scene {
 
   // 5. Update: The wormhole incrementally shrinks
   closeWormhole() {
-    console.log("Closing wormhole...");
     if (this.wormhole.scaleX > 0 && this.wormhole.scaleY > 0) {
-      console.log("Should NOT be closing wormhole if spawning. " + this.wormhole.scaleX);
       this.wormhole.scaleX -= 0.0015;
       this.wormhole.scaleY -= 0.0015;
     } else {
@@ -1098,8 +1102,9 @@ class SceneMain extends Phaser.Scene {
         this.wormhole.scaleY -= 0.0015;
       } else {
         this.wormholeIsDisappearing = false;
-        this.wormhole.destroy();
         this.shipIsImmuneToWormhole = false;
+        this.shipIsInsideWormhole = false;
+        this.wormhole.destroy();
       }
     }
   }
