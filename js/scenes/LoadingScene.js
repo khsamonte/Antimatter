@@ -1,5 +1,5 @@
 /**
- * File: SceneLoad.js
+ * File: LoadingScene.js
  * Author: Ken
  *
  * The first scene of the game: displays a progress bar while loading all assets.
@@ -7,19 +7,32 @@
  * Copyright (C) November 2019, Ken Samonte
  */
 
-class SceneLoad extends Phaser.Scene {
+class LoadingScene extends Phaser.Scene {
   constructor() {
-    super("SceneLoad");
+    super("LoadingScene");
+    this.loadingInfo = "Currently loading assets and resources. Please wait...";
+    this.loadingInfoConfig = {
+      color: "#eeeeee",
+      fontFamily: "sans-serif",
+      fontSize: game.config.width / 35
+    };
+
+    this.gameInfo = "Antimatter © 2019";
+    this.subInfo = "Based on SpaceBattle at William Clarkson's Phaser 3 Course.";
   }
 
   preload() {
+    this.uiGrid = new AlignGrid({
+      scene: this, rows: 11, cols: 11
+    });
+    // this.uiGrid.showNumbers(); 
+
     // Creates an instance of the loading progress bar
-    this.bar = new Bar({
+    this.loadingBar = new LoadingBar({
       scene: this,
       x: game.config.width / 2,
       y: game.config.height / 2
     });
-    this.bar.setPercent(0.5);
 
     // The percentage text displayed in the loading bar
     this.progText = this.add.text(
@@ -28,12 +41,34 @@ class SceneLoad extends Phaser.Scene {
       "0%",
       {
         color: "#ffffff",
-        fontFamily: "Varela Round",
+        fontFamily: "Indie Flower",
         fontSize: game.config.width / 20
       }
     );
     this.progText.setOrigin(0.5, 0.5);
     this.load.on("progress", this.onLoadingProgress, this);
+
+    // Load the loading information
+    this.loadingInfoText = this.add.text(
+      0, 0, this.loadingInfo, this.loadingInfoConfig
+    );
+    this.loadingInfoText.setOrigin(0.5, 0.5);
+    this.uiGrid.placeAtIndex(82, this.loadingInfoText);
+
+    // Load the Game Title
+    this.gameInfoText = this.add.text(
+      0, 0, this.gameInfo, this.loadingInfoConfig
+    );
+    this.gameInfoText.setOrigin(0.5, 0.5);
+    this.uiGrid.placeAtIndex(93, this.gameInfoText);
+
+    // Load the sub info
+    this.subInfoText = this.add.text(
+      0, 0, this.subInfo, this.loadingInfoConfig
+    );
+    this.subInfoText.setOrigin(0.5, 0.5);
+    this.subInfoText.x = this.gameInfoText.x;
+    this.subInfoText.y = this.gameInfoText.y + 20;
 
     // Loads all of the audio files in the game
     this.load.audio("backgroundMusic", [
@@ -72,7 +107,10 @@ class SceneLoad extends Phaser.Scene {
     this.load.audio("meteor", ["./audio/meteor.wav", "./audio/meteor.ogg"]);
 
     // Loads the UI of the game
-    this.load.image("title", "./images/title.png");
+    this.load.image("title", "./images/antimatter.png");
+    this.load.image("win", "./images/win.png");
+    this.load.image("lose", "./images/lose.png");
+
     this.load.image("purpleButton", "./images/buttons/2/3.png");
     this.load.image("toggleBack", "./images/toggles/1.png");
     this.load.image("sfxOff", "./images/icons/sfx_off.png");
@@ -81,7 +119,7 @@ class SceneLoad extends Phaser.Scene {
     this.load.image("musicOff", "./images/icons/music_off.png");
 
     // Loads the background and the ships
-    this.load.image("background", "./images/background.jpg");
+    this.load.image("background", "./images/space-bg.jpg");
     this.load.image("ship", "./images/player.png");
     this.load.image("eship", "./images/eship.png");
 
@@ -113,13 +151,18 @@ class SceneLoad extends Phaser.Scene {
 
   // Updates the graphics and text of the loading bar
   onLoadingProgress(value) {
-    this.bar.setPercent(value);
+    this.loadingBar.setPercentage(value);
     let per = Math.floor(value * 100);
     this.progText.setText(per + "%");
   }
 
   // Moves to the next scene upon loading all the images
   create() {
-    this.scene.start("SceneTitle");
+    this.cameras.main.fadeOut(1300);
+    this.time.delayedCall(1300, this.nextScene, [], this);
+  }
+
+  nextScene() {
+    this.scene.start("TitleScene");
   }
 }

@@ -9,81 +9,87 @@
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link rel="stylesheet" href="./css/style.css" />
-    <title>Space Battle | Phaser 3</title>
 
-    <!-- Main files -->
-    <script src="js/phaser.min.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/fontLoader.js"></script>
-    <script src="js/constants.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <title>Antimatter | Phaser 3</title>
 
-    <!-- Controller and Model -->
-    <script src="js/model/Model.js"></script>
-    <script src="js/controller/Controller.js"></script>
+  <!-- Main files -->
+  <script src="js/fontLoader.js"></script>
+  <script src="js/phaser.min.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/constants.js"></script>
 
-    <!-- Components -->
-    <script src="js/components/Bar.js"></script>
-    <script src="js/components/HealthBar.js"></script>
-    <script src="js/components/ScoreBox.js"></script>
-    <script src="js/components/FlatButton.js"></script>
-    <script src="js/components/ToggleButton.js"></script>
-    <script src="js/components/SoundButtons.js"></script>
+  <!-- Controller and Model -->
+  <script src="js/model/Model.js"></script>
+  <script src="js/controller/Controller.js"></script>
 
-    <!-- Scenes -->
-    <script src="js/scenes/SceneLoad.js"></script>
-    <script src="js/scenes/SceneTitle.js"></script>
-    <script src="js/scenes/SceneMain.js"></script>
-    <script src="js/scenes/SceneOver.js"></script>
+  <!-- Components -->
+  <script src="js/components/Bar.js"></script>
+  <script src="js/components/LoadingBar.js"></script>
+  <script src="js/components/HealthBar.js"></script>
+  <script src="js/components/InfoText.js"></script>
+  <script src="js/components/ScoreBox.js"></script>
+  <script src="js/components/FlatButton.js"></script>
+  <script src="js/components/ToggleButton.js"></script>
+  <script src="js/components/SoundButtons.js"></script>
 
-    <!-- Utilities -->
-    <script src="js/utils/alignGrid.js"></script>
-    <script src="js/utils/align.js"></script>
-    <script src="js/utils/collision.js"></script>
-    <script src="js/utils/mediaManager.js"></script>
-    <script src="js/utils/Physics.js"></script>
-  </head>
+  <!-- Scenes -->
+  <script src="js/scenes/LoadingScene.js"></script>
+  <script src="js/scenes/TitleScene.js"></script>
+  <script src="js/scenes/HowToScene.js"></script>
+  <script src="js/scenes/AboutScene.js"></script>
+  <script src="js/scenes/MainScene.js"></script>
+  <script src="js/scenes/GameOverScene.js"></script>
 
-  <body>
-    <div class="tint"></div>
-    <div class="container">
-      <div id="game"></div>
+  <!-- Utilities -->
+  <script src="js/utils/alignGrid.js"></script>
+  <script src="js/utils/align.js"></script>
+  <script src="js/utils/collision.js"></script>
+  <script src="js/utils/mediaManager.js"></script>
+  <script src="js/utils/Physics.js"></script>
+</head>
 
-      <div class="rules">
-        <h3>Welcome to SpaceBattle!</h3>
-        <h4>Objective:</h4>
-        <ul>
-          <li>Destroy the Mothership before it destroys you!</li>
-        </ul>
-        <h4>Controls:</h4>
-        <ul>
-          <li><b>Arrow keys</b>: Moves the Player Ship</li>
-          <li><b>Z</b>: Use turbo battery</li>
-          <li><b>C</b>: Fire lasers</li>
-        </ul>
-        <h4>Mechanics:</h4>
-        <ul>
-          <li>
-            <b>Asteroids</b> deal 1 damage. They randomly spawn and damage both
-            your ship and the Mothership upon collision.
-          </li>
-          <li><b>Lasers</b> from the Mothership deal 2 damage.</li>
-          <li>
-            <b>Stars</b> heal your ship, but it can be destroyed by asteroids
-            and bullets.
-          </li>
-          <li><b>Batteries</b> speed up your ship by 100.</li>
-          <li><b>Shields</b> make you immune to damage for 10 seconds.</li>
-        </ul>
-        <h4>Credits:</h4>
-        <ul>
-          <li>Music: The Man in Red Armor (from Tales of Legendia)</li>
-        </ul>
-      </div>
-    </div>
-  </body>
+<body>
+  <div class="tint"></div>
+  <div class="container">
+    <div id="game"></div>
+
+    <!-- <div class="rules">
+      <h3>Welcome to SpaceBattle!</h3>
+      <h4>Objective:</h4>
+      <ul>
+        <li>Destroy the Mothership before it destroys you!</li>
+      </ul>
+      <h4>Controls:</h4>
+      <ul>
+        <li><b>Arrow keys</b>: Moves the Player Ship</li>
+        <li><b>Z</b>: Use turbo battery</li>
+        <li><b>C</b>: Fire lasers</li>
+      </ul>
+      <h4>Mechanics:</h4>
+      <ul>
+        <li>
+          <b>Asteroids</b> deal 1 damage. They randomly spawn and damage both
+          your ship and the Mothership upon collision.
+        </li>
+        <li><b>Lasers</b> from the Mothership deal 2 damage.</li>
+        <li>
+          <b>Stars</b> heal your ship, but it can be destroyed by asteroids
+          and bullets.
+        </li>
+        <li><b>Batteries</b> speed up your ship by 100.</li>
+        <li><b>Shields</b> make you immune to damage for 10 seconds.</li>
+      </ul>
+      <h4>Credits:</h4>
+      <ul>
+        <li>Music: The Man in Red Armor (from Tales of Legendia)</li>
+      </ul>
+    </!-->
+  </div>
+</body>
+
 </html>

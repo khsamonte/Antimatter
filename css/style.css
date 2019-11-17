@@ -10,13 +10,18 @@ body {
   align-items: flex-start;
   display: flex;
   justify-content: center;
-  padding-top: 50px;
+  padding-top: 2vh;
   position: relative;
+  width: 100%;
   z-index: 100;
 }
 
+#game {
+  border: 1px solid #aaa;
+}
+
 .tint {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   height: 100vh;
   left: 0;

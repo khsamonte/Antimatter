@@ -36,7 +36,14 @@ window.onload = function () {
           debug: false
         }
       },
-      scene: [SceneLoad, SceneTitle, SceneMain, SceneOver]
+      scene: [
+        LoadingScene,
+        TitleScene,
+        HowToScene,
+        AboutScene,
+        MainScene,
+        GameOverScene
+      ]
     };
   } else {
     config = {
@@ -50,7 +57,14 @@ window.onload = function () {
           debug: false
         }
       },
-      scene: [SceneLoad, SceneTitle, SceneMain, SceneOver]
+      scene: [
+        LoadingScene,
+        TitleScene,
+        HowToScene,
+        AboutScene,
+        MainScene,
+        GameOverScene
+      ]
     };
   }
 
@@ -58,5 +72,6 @@ window.onload = function () {
   G = new Constants();
   model = new Model();
   model.isMobile = isMobile;
+  model.bgMusic = "";
   game = new Phaser.Game(config);
 };

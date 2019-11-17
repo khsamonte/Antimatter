@@ -8,7 +8,17 @@
  */
 
 WebFontConfig = {
-  google: { families: ["Fresca", "Flamenco", "Indie Flower", 'Anton', 'Varela Round'] }
+  google: {
+    families:
+      [
+        "Fresca",
+        "Flamenco",
+        "Indie Flower",
+        'Anton',
+        'Open Sans',
+        'Varela Round'
+      ]
+  }
 };
 (function () {
   var wf = document.createElement('script');

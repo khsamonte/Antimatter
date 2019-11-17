@@ -7,9 +7,9 @@
  * Copyright (C) November 2019, Ken Samonte
  */
 
-class SceneMain extends Phaser.Scene {
+class MainScene extends Phaser.Scene {
   constructor() {
-    super("SceneMain");
+    super("MainScene");
 
     // Initialise time components
     this.seconds = 0;
@@ -47,8 +47,8 @@ class SceneMain extends Phaser.Scene {
     this.createMothership();
 
     // Scale background relative to the scaling of the ship
-    this.background.scaleX = this.ship.scaleX;
-    this.background.scaleY = this.ship.scaleY;
+    this.background.scaleX = 1;
+    this.background.scaleY = this.background.scaleX;
 
     // Add the animations
     this.createExplosionAnimation();
@@ -823,7 +823,7 @@ class SceneMain extends Phaser.Scene {
   downPlayer() {
     if (this.playerHP < 1) {
       model.playerWon = false;
-      this.scene.start("SceneOver");
+      this.scene.start("GameOverScene");
     }
   }
 
@@ -831,7 +831,7 @@ class SceneMain extends Phaser.Scene {
     this.enemyHP -= 1;
     if (this.enemyHP < 1) {
       model.playerWon = true;
-      this.scene.start("SceneOver");
+      this.scene.start("GameOverScene");
     }
   }
 
@@ -991,19 +991,22 @@ class SceneMain extends Phaser.Scene {
 
   // 2. Deals with all of the movement of hte ship once it taps the wormhole
   pullShipToWormhole() {
-    this.shipPulledToWormhole = true;
-    this.shipIsInsideWormhole = true;
+    if (!this.wormholeIsDisappearing) {
+      this.shipPulledToWormhole = true;
+      this.shipIsInsideWormhole = true;
+      this.wearingShield = true;
 
-    // Movement of ship when entering wormhole
-    if (this.shipPulledToWormhole) {
-      let shipAngle = this.physics.moveTo(
-        this.ship,
-        this.wormhole.x,
-        this.wormhole.y,
-        150
-      );
-      shipAngle = this.toDegrees(shipAngle);
-      this.ship.angle = shipAngle;
+      // Movement of ship when entering wormhole
+      if (this.shipPulledToWormhole) {
+        let shipAngle = this.physics.moveTo(
+          this.ship,
+          this.wormhole.x,
+          this.wormhole.y,
+          150
+        );
+        shipAngle = this.toDegrees(shipAngle);
+        this.ship.angle = shipAngle;
+      }
     }
   }
 
@@ -1082,6 +1085,7 @@ class SceneMain extends Phaser.Scene {
       this.ship.scaleX += 0.01;
       this.ship.scaleY += 0.01;
     } else {
+      this.wearingShield = false;
       this.shipIsReappearing = false;
       this.wormholeIsDisappearing = true;
     }

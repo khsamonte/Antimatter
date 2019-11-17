@@ -7,9 +7,13 @@
  * Copyright (C) November 2019, Ken Samonte
  */
 
-class SceneOver extends Phaser.Scene {
+class GameOverScene extends Phaser.Scene {
   constructor() {
-    super("SceneOver");
+    super("GameOverScene");
+  }
+
+  preload() {
+    this.cameras.main.fadeIn(500);
   }
 
   create() {
@@ -24,38 +28,41 @@ class SceneOver extends Phaser.Scene {
     });
 
     // The text displayed declaring whether the player won or lost
-    this.winnerText = this.add.text(
-      0,
-      0,
-      model.playerWon ? "YOU WIN" : "YOU LOSE",
-      {
-        fontSize: game.config.width / 10,
-        color: model.playerWon ? "#3fe213" : "#e50000",
-        fontFamily: "Varela Round"
-      }
-    );
-    this.winnerText.setOrigin(0.5, 0.5);
-    this.alignGrid.placeAtIndex(38, this.winnerText);
+    // this.winnerText = this.add.text(
+    //   0,
+    //   0,
+    //   model.playerWon ? "YOU WIN" : "YOU LOSE",
+    //   {
+    //     fontSize: game.config.width / 10,
+    //     color: model.playerWon ? "#3fe213" : "#e50000",
+    //     fontFamily: "Varela Round"
+    //   }
+    // );
+    // this.winnerText.setOrigin(0.5, 0.5);
+    // this.alignGrid.placeAtIndex(38, this.winnerText);
 
     // Displays the ship sprite of the winner
     if (model.playerWon) {
+      this.winnerText = this.add.image(0, 0, "win");
       this.winner = this.add.image(0, 0, "ship");
     } else {
+      this.winnerText = this.add.image(0, 0, "lose");
       this.winner = this.add.image(0, 0, "eship");
     }
     Align.scaleToGameWidth(this.winner, 0.25);
     this.winner.angle = 270;
+    this.winnerText.setOrigin(0.5, 0.5);
     this.alignGrid.placeAtIndex(60, this.winner);
+    this.alignGrid.placeAtIndex(38, this.winnerText);
 
     // Displays the start button once again if user wishes to restart
     const startButton = new FlatButton({
       scene: this,
-      key: "purpleButton",
-      text: "PLAY AGAIN",
+      text: "Main Menu",
       event: "start_game",
       textConfig: {
         fontFamily: "Varela Round",
-        fontSize: 24
+        fontSize: 20
       }
     });
     this.alignGrid.placeAtIndex(93, startButton);
@@ -65,8 +72,8 @@ class SceneOver extends Phaser.Scene {
 
     // const sb = new SoundButtons({ scene: this });
   }
+
   startGame() {
-    this.scene.start("SceneMain");
+    this.scene.start("TitleScene");
   }
-  update() {}
 }
