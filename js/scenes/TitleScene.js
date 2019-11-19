@@ -9,12 +9,12 @@
 
 class TitleScene extends Phaser.Scene {
   constructor() {
-    super("TitleScene");
+    super('TitleScene');
 
-    this.creditsInfo = "Created by: Ken Samonte & Ralph Montevirgen © 2019";
+    this.creditsInfo = 'Created by: Ken Samonte & Ralph Montevirgen © 2019';
     this.creditsInfoConfig = {
-      color: "#9775ba",
-      fontFamily: "Varela Round",
+      color: '#9775ba',
+      fontFamily: 'Varela Round',
       fontSize: game.config.width / 35
     };
   }
@@ -28,14 +28,14 @@ class TitleScene extends Phaser.Scene {
     emitter = new Phaser.Events.EventEmitter();
     controller = new Controller();
 
-    this.background = this.add.image(0, 0, "background").setOrigin(0, 0);
+    this.background = this.add.image(0, 0, 'background').setOrigin(0, 0);
 
     // Sets the background music
     const mediaManager = new MediaManager({ scene: this });
 
-    if (model.bgMusic === "") {
-      model.bgMusic = "red armor";
-      mediaManager.setBackgroundMusic("backgroundMusic");
+    if (model.bgMusic === '') {
+      model.bgMusic = 'red armor';
+      mediaManager.setBackgroundMusic('backgroundMusic');
     }
 
     // Creates a canvas grid to facilitate positioning of objects
@@ -47,30 +47,33 @@ class TitleScene extends Phaser.Scene {
     this.meteorGroup = this.physics.add.group({});
 
     // Adds the title to the screen
-    const title = this.add.image(0, 0, "title");
+    const title = this.add.image(0, 0, 'title');
     Align.scaleToGameWidth(title, 0.9);
     this.alignGrid.placeAtIndex(16, title);
 
     // Load the credits
     this.credits = this.add.text(
-      0, 0, this.creditsInfo, this.creditsInfoConfig
+      0,
+      0,
+      this.creditsInfo,
+      this.creditsInfoConfig
     );
     this.credits.setOrigin(0.5, 0.5);
     this.alignGrid.placeAtIndex(27, this.credits);
 
     // Displays a static sprite of the player's ship
-    const staticShip = this.add.image(0, 0, "ship");
+    const staticShip = this.add.image(0, 0, 'ship');
     this.alignGrid.placeAtIndex(60, staticShip);
     Align.scaleToGameWidth(staticShip, 0.125);
 
     // Creates the start button
     const startButton = new FlatButton({
       scene: this,
-      text: "Start Game",
-      event: "start_game",
+      text: 'Start Game',
+      event: 'start_game',
       textConfig: {
-        fontFamily: "Varela Round",
-        fontSize: 20
+        fontFamily: 'Varela Round',
+        fontSize: 16
       }
     });
     this.alignGrid.placeAtIndex(82, startButton);
@@ -78,11 +81,11 @@ class TitleScene extends Phaser.Scene {
     // Creates the start button
     const controlsButton = new FlatButton({
       scene: this,
-      text: "How To Play",
-      event: "game_controls",
+      text: 'How To Play',
+      event: 'game_controls',
       textConfig: {
-        fontFamily: "Varela Round",
-        fontSize: 20
+        fontFamily: 'Varela Round',
+        fontSize: 16
       }
     });
     this.alignGrid.placeAtIndex(93, controlsButton);
@@ -90,19 +93,19 @@ class TitleScene extends Phaser.Scene {
     // Creates the start button
     const aboutButton = new FlatButton({
       scene: this,
-      text: "About",
-      event: "about_us",
+      text: 'About',
+      event: 'about_us',
       textConfig: {
-        fontFamily: "Varela Round",
-        fontSize: 20
+        fontFamily: 'Varela Round',
+        fontSize: 16
       }
     });
     this.alignGrid.placeAtIndex(104, aboutButton);
 
     // Runs the function when the event is triggered from the startButton
-    emitter.on("start_game", this.startGame, this);
-    emitter.on("game_controls", this.viewControllers, this);
-    emitter.on("about_us", this.viewAbout, this);
+    emitter.on('start_game', this.startGame, this);
+    emitter.on('game_controls', this.viewControllers, this);
+    emitter.on('about_us', this.viewAbout, this);
 
     // const sb = new SoundButtons({ scene: this });
   }
@@ -122,7 +125,7 @@ class TitleScene extends Phaser.Scene {
     const yy = Math.floor(Math.random() * game.config.height);
 
     // Add the sprite
-    const meteor = this.physics.add.sprite(xx, yy, "meteor");
+    const meteor = this.physics.add.sprite(xx, yy, 'meteor');
     Align.scaleToGameWidth(meteor, 0.2);
     this.meteorGroup.add(meteor);
 
@@ -134,14 +137,14 @@ class TitleScene extends Phaser.Scene {
   }
 
   startGame() {
-    this.scene.start("MainScene");
+    this.scene.start('MainScene');
   }
 
   viewControllers() {
-    this.scene.start("HowToScene");
+    this.scene.start('HowToScene');
   }
 
   viewAbout() {
-    this.scene.start("AboutScene");
+    this.scene.start('AboutScene');
   }
 }
