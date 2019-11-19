@@ -14,11 +14,11 @@ let G;
 let controller;
 let config;
 
-window.onload = function () {
+window.onload = function() {
   // Looks at navigator.userAgent (built in every browser for detecting mobiles)
-  let isMobile = navigator.userAgent.indexOf("Mobile");
+  let isMobile = navigator.userAgent.indexOf('Mobile');
   if (isMobile === -1) {
-    isMobile = navigator.userAgent.indexOf("Tablet");
+    isMobile = navigator.userAgent.indexOf('Tablet');
   }
 
   // Desktop or Laptop
@@ -29,9 +29,9 @@ window.onload = function () {
       // height: 580,
       width: 480,
       height: 640,
-      parent: "game",
+      parent: 'game',
       physics: {
-        default: "arcade",
+        default: 'arcade',
         arcade: {
           debug: false
         }
@@ -41,6 +41,7 @@ window.onload = function () {
         TitleScene,
         HowToScene,
         AboutScene,
+        LevelInfoScene,
         MainScene,
         GameOverScene
       ]
@@ -50,9 +51,9 @@ window.onload = function () {
       type: Phaser.AUTO,
       width: window.innerWidth,
       height: window.innerHeight,
-      parent: "game",
+      parent: 'game',
       physics: {
-        default: "arcade",
+        default: 'arcade',
         arcade: {
           debug: false
         }
@@ -62,6 +63,7 @@ window.onload = function () {
         TitleScene,
         HowToScene,
         AboutScene,
+        LevelInfoScene,
         MainScene,
         GameOverScene
       ]
@@ -72,6 +74,6 @@ window.onload = function () {
   G = new Constants();
   model = new Model();
   model.isMobile = isMobile;
-  model.bgMusic = "";
+  model.bgMusic = '';
   game = new Phaser.Game(config);
 };

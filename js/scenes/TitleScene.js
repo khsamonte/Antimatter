@@ -103,7 +103,7 @@ class TitleScene extends Phaser.Scene {
     this.alignGrid.placeAtIndex(104, aboutButton);
 
     // Runs the function when the event is triggered from the startButton
-    emitter.on('start_game', this.startGame, this);
+    emitter.on('start_game', this.fadeOut, this);
     emitter.on('game_controls', this.viewControllers, this);
     emitter.on('about_us', this.viewAbout, this);
 
@@ -136,8 +136,13 @@ class TitleScene extends Phaser.Scene {
     meteor.body.collideWorldBounds = false;
   }
 
+  fadeOut() {
+    this.cameras.main.fadeOut(500);
+    this.time.delayedCall(500, this.startGame, [], this);
+  }
+
   startGame() {
-    this.scene.start('MainScene');
+    this.scene.start('LevelInfoScene');
   }
 
   viewControllers() {
